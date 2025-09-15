@@ -20,7 +20,6 @@ public class PostService {
     private final PostRepository postRepository;
     private final UserAccountRepository userAccountRepository;
 
-    // 1. create
     @Transactional
     public Post createPost(PostDTO.Request dto) {
         UserAccount userAccount = userAccountRepository
@@ -30,25 +29,33 @@ public class PostService {
         post.setAuthor(userAccount);
         post.setTitle(dto.getTitle());
         post.setContent(dto.getContent());
+        // [추가] 이미지 URL 설정
+        post.setImageUrl(dto.getImageUrl());
         return postRepository.save(post);
     }
-    // 2-1. findAll
-    @Transactional(readOnly = true)
-    public List<Post> findAll() {
-        return postRepository.findAll();
+
+    @Transactional
+    public void updatePost(Long id, PostDTO.Request dto) {
+        Post post = findById(id);
+        if (!post.getAuthor().getUsername().equals(dto.getUsername())) {
+            throw new SecurityException("작성자만 수정 가능");
+        }
+        post.setTitle(dto.getTitle());
+        post.setContent(dto.getContent());
+        // [수정] 새 이미지 URL이 있을 경우에만 업데이트
+        if (dto.getImageUrl() != null) {
+            post.setImageUrl(dto.getImageUrl());
+        }
+        postRepository.save(post);
     }
 
-    // 2-1-2. paging & search
+    // ... 기존 find, delete 등의 메서드는 그대로 유지 ...
     @Transactional(readOnly = true)
     public Page<Post> findWithPagingAndSearch(String keyword, int page) {
-        // 키워드 구현은 조금 이따가...
-        // TODO : keyword
         Pageable pageable = PageRequest.of(page, 5);
-//        return postRepository.findByTitleContainingOrContentContaining(keyword, keyword, pageable);
         return postRepository.findByTitleContainingOrContentContainingOrderByIdDesc(keyword, keyword, pageable);
     }
 
-    // 2-2. findOne (byId...)
     @Transactional(readOnly = true)
     public Post findById(Long id) {
         return postRepository.findById(id)
@@ -57,21 +64,6 @@ public class PostService {
 
     @Transactional
     public void deleteById(Long id) {
-        if (!postRepository.existsById(id)) {
-            throw new IllegalArgumentException("게시물 없음");
-        }
         postRepository.deleteById(id);
-    }
-
-    @Transactional
-    public void updatePost(Long id, PostDTO.Request dto) {
-        Post post = findById(id); // 없으면 예외처리로...
-        // 작성자와 수정을 하려는 사람이 다르다
-        if (!post.getAuthor().getUsername().equals(dto.getUsername())) {
-            throw new SecurityException("작성자만 수정 가능");
-        }
-        post.setTitle(dto.getTitle());
-        post.setContent(dto.getContent());
-        postRepository.save(post);
     }
 }

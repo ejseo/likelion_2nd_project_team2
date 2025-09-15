@@ -34,6 +34,9 @@
             </div>
         </div>
         <div class="card-body">
+            <div th:if="${post.imageUrl != null and !post.imageUrl.isEmpty()}" class="mb-3 text-center">
+                <img th:src="@{/files/{filename}(filename=${post.imageUrl})}" class="img-fluid rounded" alt="Attached Image" style="max-width: 80%;">
+            </div>
             <p class="card-text" style="white-space: pre-wrap;" th:text="${post.content}"></p>
         </div>
     </div>

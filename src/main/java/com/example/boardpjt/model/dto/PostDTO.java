@@ -6,7 +6,6 @@ import lombok.Setter;
 
 import java.time.LocalDateTime;
 
-
 public class PostDTO {
 
     @Getter
@@ -19,14 +18,18 @@ public class PostDTO {
         private String content;
 
         private String username;
+
+        // [추가] 이미지 URL 필드
+        private String imageUrl;
     }
 
+    // [수정] Response record에 imageUrl 추가
     public record Response(
             Long id,
             String title,
             String content,
             String username,
-            LocalDateTime createdAt
-    ) {
-    }
+            LocalDateTime createdAt,
+            String imageUrl
+    ) {}
 }
