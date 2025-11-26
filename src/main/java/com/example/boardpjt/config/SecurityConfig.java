@@ -42,8 +42,9 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 
         http.authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/", "/auth/**", "/login", "/posts/**", "/css/**", "/js/**", "/images/**").permitAll()
+                        .requestMatchers("/", "/auth/**", "/login", "/posts", "/css/**", "/js/**", "/images/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/posts", "/api/posts/{postId}", "/api/posts/search").permitAll()
+                        .requestMatchers("/posts/{id:[0-9]+}").authenticated()
                         .requestMatchers("/my-page").hasAnyRole("USER", "ADMIN")
                         .requestMatchers("/api/**").authenticated()
                         .requestMatchers("/admin/**").hasRole("ADMIN")
