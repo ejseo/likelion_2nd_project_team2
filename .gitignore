@@ -1,24 +1,41 @@
-# IntelliJ 설정 파일
-.idea/
-*.iml
-.idea/misc.xml
-.idea/modules.xml
-.idea/vcs.xml
+HELP.md
+.gradle
+build/
+!gradle/wrapper/gradle-wrapper.jar
+!**/src/main/**/build/
+!**/src/test/**/build/
 
-# VSCode 설정
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+bin/
+!**/src/main/**/bin/
+!**/src/test/**/bin/
+
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+out/
+!**/src/main/**/out/
+!**/src/test/**/out/
+
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+
+### VS Code ###
 .vscode/
 
-# Gradle
-.gradle/
-build/
-bin/
-out/
-
-# 시스템 파일
-.DS_Store
-
-# 로그 파일
-*.log
-
-# Java 컴파일 파일
-*.class
+# dev 관련 노출되는 파일 Git에 업로드 되지 않게
+# application-dev.yml
+*-dev.*

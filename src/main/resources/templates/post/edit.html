@@ -1,0 +1,978 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>글 수정 - Travelog</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Serif KR', serif;
+            color: #222;
+            line-height: 1.8;
+            background-color: #fafafa;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Header */
+        header {
+            background-color: white;
+            border-bottom: 1px solid #e8e8e8;
+            padding: 20px 40px;
+        }
+
+        nav {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-family: 'Playfair Display', serif;
+            font-size: 28px;
+            font-weight: 700;
+            color: #2D9596;
+            text-decoration: none;
+            letter-spacing: -0.5px;
+        }
+
+        .nav-actions {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .btn-cancel {
+            padding: 8px 20px;
+            background-color: white;
+            color: #666;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            text-decoration: none;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-cancel:hover {
+            background-color: #f8f9fa;
+            color: #666;
+        }
+
+        .btn-submit {
+            padding: 8px 24px;
+            background-color: #FFB800;
+            color: white;
+            border: none;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-submit:hover {
+            background-color: #E6A600;
+            transform: translateY(-1px);
+        }
+
+        /* Main Content */
+        main {
+            flex: 1;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 60px 40px 100px;
+            width: 100%;
+        }
+
+        .page-header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 48px;
+        }
+
+        .page-icon {
+            font-size: 36px;
+        }
+
+        .page-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 36px;
+            font-weight: 700;
+            color: #1a1a1a;
+        }
+
+        .page-subtitle {
+            font-size: 16px;
+            color: #666;
+            margin-top: 8px;
+        }
+
+        /* Alert */
+        .alert {
+            background-color: #FFF3F3;
+            border: 1px solid #FFE0E0;
+            color: #D32F2F;
+            padding: 16px 20px;
+            border-radius: 8px;
+            margin-bottom: 32px;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        /* Form */
+        .form-section {
+            background-color: white;
+            border-radius: 12px;
+            padding: 48px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+        }
+
+        .form-group {
+            margin-bottom: 40px;
+        }
+
+        .form-group:last-child {
+            margin-bottom: 0;
+        }
+
+        label {
+            display: block;
+            font-size: 15px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 12px;
+        }
+
+        label .required {
+            color: #FF6B6B;
+            margin-left: 4px;
+        }
+
+        label .optional {
+            color: #999;
+            font-weight: 400;
+            font-size: 13px;
+            margin-left: 8px;
+        }
+
+        /* Title Input */
+        input[type="text"] {
+            width: 100%;
+            padding: 16px 20px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 18px;
+            font-family: 'Noto Serif KR', serif;
+            transition: all 0.3s ease;
+            outline: none;
+        }
+
+        input[type="text"]:focus {
+            border-color: #FFB800;
+            box-shadow: 0 0 0 3px rgba(255, 184, 0, 0.1);
+        }
+
+        input[type="text"].is-invalid {
+            border-color: #FF6B6B;
+        }
+
+        input[type="text"]::placeholder {
+            color: #bbb;
+        }
+
+        /* Category & Rating Row */
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+        }
+
+        select {
+            width: 100%;
+            padding: 14px 16px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 15px;
+            font-family: 'Noto Serif KR', serif;
+            background-color: white;
+            cursor: pointer;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        select:focus {
+            border-color: #FFB800;
+            box-shadow: 0 0 0 3px rgba(255, 184, 0, 0.1);
+        }
+
+        /* Rating Selector */
+        .rating-selector {
+            display: flex;
+            gap: 8px;
+        }
+
+        .rating-star {
+            font-size: 32px;
+            cursor: pointer;
+            color: #ddd;
+            transition: all 0.2s ease;
+            user-select: none;
+        }
+
+        .rating-star.active {
+            color: #FFB800;
+        }
+
+        .rating-star:hover {
+            transform: scale(1.1);
+        }
+
+        .rating-value {
+            margin-left: 16px;
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+            display: flex;
+            align-items: center;
+        }
+
+        /* Tags Input */
+        .tags-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            padding: 12px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            min-height: 52px;
+            cursor: text;
+            transition: all 0.3s ease;
+        }
+
+        .tags-container:focus-within {
+            border-color: #FFB800;
+            box-shadow: 0 0 0 3px rgba(255, 184, 0, 0.1);
+        }
+
+        .tag-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            background-color: #FFF8E1;
+            color: #E6A600;
+            border-radius: 14px;
+            font-size: 14px;
+        }
+
+        .tag-remove {
+            cursor: pointer;
+            font-weight: bold;
+            opacity: 0.7;
+            transition: opacity 0.2s ease;
+        }
+
+        .tag-remove:hover {
+            opacity: 1;
+        }
+
+        .tag-input {
+            flex: 1;
+            min-width: 120px;
+            border: none;
+            outline: none;
+            font-size: 14px;
+            font-family: 'Noto Serif KR', serif;
+            padding: 6px 8px;
+        }
+
+        .tags-help {
+            font-size: 13px;
+            color: #999;
+            margin-top: 8px;
+        }
+
+        /* Content Textarea */
+        textarea {
+            width: 100%;
+            min-height: 400px;
+            padding: 20px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            font-family: 'Noto Serif KR', serif;
+            line-height: 1.8;
+            resize: vertical;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        textarea:focus {
+            border-color: #FFB800;
+            box-shadow: 0 0 0 3px rgba(255, 184, 0, 0.1);
+        }
+
+        textarea.is-invalid {
+            border-color: #FF6B6B;
+        }
+
+        textarea::placeholder {
+            color: #bbb;
+        }
+
+        /* Image Upload */
+        .current-image-section {
+            margin-bottom: 24px;
+        }
+
+        .current-image-label {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 12px;
+        }
+
+        .current-image-preview {
+            position: relative;
+            max-width: 100%;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .current-image {
+            width: 100%;
+            height: auto;
+            display: block;
+            border-radius: 8px;
+        }
+
+        .remove-current-image {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            width: 36px;
+            height: 36px;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .remove-current-image:hover {
+            background-color: #FF6B6B;
+        }
+
+        .image-upload-area {
+            border: 2px dashed #e0e0e0;
+            border-radius: 12px;
+            padding: 48px 24px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background-color: #fafafa;
+        }
+
+        .image-upload-area:hover {
+            border-color: #FFB800;
+            background-color: #fffef5;
+        }
+
+        .image-upload-area.dragover {
+            border-color: #FFB800;
+            background-color: #FFF8E1;
+        }
+
+        .upload-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+
+        .upload-text {
+            font-size: 16px;
+            color: #666;
+            margin-bottom: 8px;
+        }
+
+        .upload-subtext {
+            font-size: 13px;
+            color: #999;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        /* New Image Preview */
+        .image-preview {
+            display: none;
+            position: relative;
+            margin-top: 24px;
+            border-radius: 8px;
+            overflow: hidden;
+            max-width: 100%;
+        }
+
+        .image-preview.active {
+            display: block;
+        }
+
+        .preview-image {
+            width: 100%;
+            height: auto;
+            display: block;
+            border-radius: 8px;
+        }
+
+        .preview-remove {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            width: 36px;
+            height: 36px;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .preview-remove:hover {
+            background-color: #FF6B6B;
+        }
+
+        /* Error Messages */
+        .invalid-feedback {
+            display: block;
+            color: #D32F2F;
+            font-size: 13px;
+            margin-top: 8px;
+        }
+
+        /* Form Actions */
+        .form-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            margin-top: 48px;
+            padding-top: 32px;
+            border-top: 1px solid #e8e8e8;
+        }
+
+        .btn-action {
+            padding: 14px 36px;
+            border-radius: 24px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-primary-action {
+            background-color: #FFB800;
+            color: white;
+            border: none;
+        }
+
+        .btn-primary-action:hover {
+            background-color: #E6A600;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 184, 0, 0.25);
+            color: white;
+        }
+
+        .btn-secondary-action {
+            background-color: white;
+            color: #666;
+            border: 1px solid #ddd;
+        }
+
+        .btn-secondary-action:hover {
+            background-color: #f8f9fa;
+            border-color: #ccc;
+            color: #666;
+        }
+
+        /* Footer */
+        footer {
+            background-color: white;
+            border-top: 1px solid #e8e8e8;
+            padding: 24px 40px;
+            text-align: center;
+        }
+
+        .footer-text {
+            font-size: 13px;
+            color: #999;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            header {
+                padding: 16px 20px;
+            }
+
+            .logo {
+                font-size: 24px;
+            }
+
+            main {
+                padding: 40px 20px 80px;
+            }
+
+            .page-title {
+                font-size: 28px;
+            }
+
+            .form-section {
+                padding: 32px 24px;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+                gap: 32px;
+            }
+
+            .form-actions {
+                flex-direction: column-reverse;
+            }
+
+            .btn-action {
+                width: 100%;
+            }
+        }
+
+        /* Animation */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .form-section {
+            animation: fadeIn 0.6s ease-out;
+        }
+    </style>
+</head>
+<body>
+<!-- Header -->
+<header>
+    <nav>
+        <a href="/" class="logo">Travelog</a>
+        <div class="nav-actions">
+            <a th:href="@{/posts/{id}(id=${postId})}" class="btn-cancel">취소</a>
+            <button type="submit" form="editForm" class="btn-submit">수정 완료</button>
+        </div>
+    </nav>
+</header>
+
+<!-- Main Content -->
+<main>
+    <div class="page-header">
+        <div class="page-icon">✏️</div>
+        <div>
+            <div class="page-title">글 수정</div>
+            <div class="page-subtitle">여행 이야기를 다듬어보세요</div>
+        </div>
+    </div>
+
+    <!-- Error Alert -->
+    <div th:if="${error}" class="alert" th:text="${error}"></div>
+
+    <!-- Form -->
+    <form id="editForm" th:action="@{/posts/{id}/edit(id=${postId})}" th:object="${post}" method="post" enctype="multipart/form-data">
+        <div class="form-section">
+            <!-- Title -->
+            <div class="form-group">
+                <label for="title">
+                    제목 <span class="required">*</span>
+                </label>
+                <input
+                        type="text"
+                        id="title"
+                        th:field="*{title}"
+                        th:errorclass="is-invalid"
+                        placeholder="예: 제주 한달살기 후기"
+                        required
+                        autofocus>
+                <div class="invalid-feedback" th:if="${#fields.hasErrors('title')}" th:errors="*{title}"></div>
+            </div>
+
+            <!-- Category & Rating Row -->
+            <div class="form-row">
+                <!-- Category -->
+                <div class="form-group">
+                    <label for="category">
+                        카테고리 <span class="required">*</span>
+                    </label>
+                    <select id="category" name="category" required>
+                        <option value="">카테고리를 선택하세요</option>
+                        <option value="beach">🏖️ 해변</option>
+                        <option value="mountain">⛰️ 산·자연</option>
+                        <option value="city">🏛️ 도시</option>
+                        <option value="food">🍜 맛집</option>
+                        <option value="culture">🎨 문화</option>
+                        <option value="activity">🎢 액티비티</option>
+                    </select>
+                </div>
+
+                <!-- Rating -->
+                <div class="form-group">
+                    <label>
+                        평점 <span class="required">*</span>
+                    </label>
+                    <div style="display: flex; align-items: center;">
+                        <div class="rating-selector" id="ratingSelector">
+                            <span class="rating-star" data-rating="1">⭐</span>
+                            <span class="rating-star" data-rating="2">⭐</span>
+                            <span class="rating-star" data-rating="3">⭐</span>
+                            <span class="rating-star" data-rating="4">⭐</span>
+                            <span class="rating-star" data-rating="5">⭐</span>
+                        </div>
+                        <span class="rating-value" id="ratingValue">0.0</span>
+                    </div>
+                    <input type="hidden" id="rating" name="rating" value="0" required>
+                </div>
+            </div>
+
+            <!-- Tags -->
+            <div class="form-group">
+                <label for="tagInput">
+                    태그 <span class="optional">(선택)</span>
+                </label>
+                <div class="tags-container" id="tagsContainer">
+                    <input
+                            type="text"
+                            id="tagInput"
+                            class="tag-input"
+                            placeholder="태그를 입력하고 Enter를 누르세요">
+                </div>
+                <div class="tags-help">예: #제주 #힐링 #한달살기 (최대 5개)</div>
+                <input type="hidden" id="tagsData" name="tags" value="">
+            </div>
+
+            <!-- Content -->
+            <div class="form-group">
+                <label for="content">
+                    본문 <span class="required">*</span>
+                </label>
+                <textarea
+                        id="content"
+                        th:field="*{content}"
+                        th:errorclass="is-invalid"
+                        placeholder="여행의 특별한 순간을 자세히 작성해주세요..."
+                        required></textarea>
+                <div class="invalid-feedback" th:if="${#fields.hasErrors('content')}" th:errors="*{content}"></div>
+            </div>
+
+            <!-- Image Upload -->
+            <div class="form-group">
+                <label>
+                    대표 이미지 <span class="optional">(선택, 5MB 이하)</span>
+                </label>
+
+                <!-- Current Image (if exists) -->
+                <div class="current-image-section" id="currentImageSection" style="display: none;">
+                    <div class="current-image-label">현재 이미지</div>
+                    <div class="current-image-preview">
+                        <img id="currentImage" class="current-image" alt="Current Image">
+                        <button type="button" class="remove-current-image" id="removeCurrentImage">×</button>
+                    </div>
+                </div>
+
+                <!-- New Image Upload -->
+                <div class="image-upload-area" id="uploadArea">
+                    <div class="upload-icon">📷</div>
+                    <div class="upload-text">새 이미지를 선택하거나 여기로 드래그하세요</div>
+                    <div class="upload-subtext">JPG, PNG, GIF 형식 지원 (최대 5MB)</div>
+                </div>
+                <input type="file" id="file" name="file" accept="image/*">
+
+                <div class="image-preview" id="imagePreview">
+                    <img id="previewImage" class="preview-image" alt="Preview">
+                    <button type="button" class="preview-remove" id="removeImage">×</button>
+                </div>
+            </div>
+
+            <!-- Form Actions -->
+            <div class="form-actions">
+                <a th:href="@{/posts/{id}(id=${postId})}" class="btn-action btn-secondary-action">취소</a>
+                <button type="submit" class="btn-action btn-primary-action">수정 완료</button>
+            </div>
+        </div>
+    </form>
+</main>
+
+<!-- Footer -->
+<footer>
+    <p class="footer-text">© 2025 Travelog. All rights reserved.</p>
+</footer>
+
+<script th:inline="javascript">
+    // Initialize with existing data
+    const existingRating = /*[[${post.rating}]]*/ 0;
+    const existingTags = /*[[${post.tags}]]*/ '';
+    const existingImageUrl = /*[[${post.imageUrl}]]*/ '';
+
+    // Rating Selector
+    const ratingStars = document.querySelectorAll('.rating-star');
+    const ratingValue = document.getElementById('ratingValue');
+    const ratingInput = document.getElementById('rating');
+
+    // Set initial rating
+    if (existingRating > 0) {
+        ratingInput.value = existingRating;
+        ratingValue.textContent = existingRating + '.0';
+        ratingStars.forEach((star, index) => {
+            if (index < existingRating) {
+                star.classList.add('active');
+            }
+        });
+    }
+
+    ratingStars.forEach(star => {
+        star.addEventListener('click', function() {
+            const rating = this.getAttribute('data-rating');
+            ratingInput.value = rating;
+            ratingValue.textContent = rating + '.0';
+
+            ratingStars.forEach((s, index) => {
+                if (index < rating) {
+                    s.classList.add('active');
+                } else {
+                    s.classList.remove('active');
+                }
+            });
+        });
+
+        star.addEventListener('mouseenter', function() {
+            const rating = this.getAttribute('data-rating');
+            ratingStars.forEach((s, index) => {
+                if (index < rating) {
+                    s.style.color = '#FFB800';
+                } else {
+                    s.style.color = '#ddd';
+                }
+            });
+        });
+    });
+
+    document.getElementById('ratingSelector').addEventListener('mouseleave', function() {
+        const currentRating = ratingInput.value;
+        ratingStars.forEach((s, index) => {
+            if (index < currentRating) {
+                s.style.color = '#FFB800';
+            } else {
+                s.style.color = '#ddd';
+            }
+        });
+    });
+
+    // Tags Input
+    const tagInput = document.getElementById('tagInput');
+    const tagsContainer = document.getElementById('tagsContainer');
+    const tagsData = document.getElementById('tagsData');
+    let tags = [];
+
+    // Initialize tags
+    if (existingTags) {
+        tags = existingTags.split(',').map(tag => tag.trim()).filter(tag => tag);
+        renderTags();
+        updateTagsData();
+    }
+
+    function updateTagsData() {
+        tagsData.value = tags.join(',');
+    }
+
+    function addTag(tagText) {
+        const cleanTag = tagText.trim().replace(/^#/, '');
+        if (cleanTag && !tags.includes(cleanTag) && tags.length < 5) {
+            tags.push(cleanTag);
+            renderTags();
+            updateTagsData();
+        }
+        tagInput.value = '';
+    }
+
+    window.removeTag = function(tagText) {
+        tags = tags.filter(tag => tag !== tagText);
+        renderTags();
+        updateTagsData();
+    }
+
+    function renderTags() {
+        const existingTags = tagsContainer.querySelectorAll('.tag-item');
+        existingTags.forEach(tag => tag.remove());
+
+        tags.forEach(tag => {
+            const tagElement = document.createElement('div');
+            tagElement.className = 'tag-item';
+            tagElement.innerHTML = `
+                #${tag}
+                <span class="tag-remove" onclick="removeTag('${tag}')">×</span>
+            `;
+            tagsContainer.insertBefore(tagElement, tagInput);
+        });
+    }
+
+    tagInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            addTag(this.value);
+        }
+    });
+
+    tagInput.addEventListener('blur', function() {
+        if (this.value.trim()) {
+            addTag(this.value);
+        }
+    });
+
+    tagsContainer.addEventListener('click', function() {
+        tagInput.focus();
+    });
+
+    // Current Image Display
+    if (existingImageUrl) {
+        const currentImageSection = document.getElementById('currentImageSection');
+        const currentImage = document.getElementById('currentImage');
+        currentImage.src = '/files/' + existingImageUrl;
+        currentImageSection.style.display = 'block';
+    }
+
+    const removeCurrentImage = document.getElementById('removeCurrentImage');
+    removeCurrentImage.addEventListener('click', function() {
+        document.getElementById('currentImageSection').style.display = 'none';
+    });
+
+    // New Image Upload
+    const uploadArea = document.getElementById('uploadArea');
+    const fileInput = document.getElementById('file');
+    const imagePreview = document.getElementById('imagePreview');
+    const previewImage = document.getElementById('previewImage');
+    const removeImage = document.getElementById('removeImage');
+
+    uploadArea.addEventListener('click', () => fileInput.click());
+
+    fileInput.addEventListener('change', function(e) {
+        handleFile(this.files[0]);
+    });
+
+    // Drag and Drop
+    uploadArea.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        uploadArea.classList.add('dragover');
+    });
+
+    uploadArea.addEventListener('dragleave', () => {
+        uploadArea.classList.remove('dragover');
+    });
+
+    uploadArea.addEventListener('drop', (e) => {
+        e.preventDefault();
+        uploadArea.classList.remove('dragover');
+        const file = e.dataTransfer.files[0];
+        if (file && file.type.startsWith('image/')) {
+            fileInput.files = e.dataTransfer.files;
+            handleFile(file);
+        }
+    });
+
+    function handleFile(file) {
+        if (!file) return;
+
+        // Validate file type
+        if (!file.type.startsWith('image/')) {
+            alert('이미지 파일만 업로드할 수 있습니다.');
+            return;
+        }
+
+        // Validate file size (5MB)
+        const maxSize = 5 * 1024 * 1024;
+        if (file.size > maxSize) {
+            alert('파일 크기는 5MB를 초과할 수 없습니다.');
+            return;
+        }
+
+        // Show preview
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            previewImage.src = e.target.result;
+            imagePreview.classList.add('active');
+            uploadArea.style.display = 'none';
+            document.getElementById('currentImageSection').style.display = 'none';
+        };
+        reader.readAsDataURL(file);
+    }
+
+    removeImage.addEventListener('click', () => {
+        fileInput.value = '';
+        previewImage.src = '';
+        imagePreview.classList.remove('active');
+        uploadArea.style.display = 'block';
+
+        // Show current image again if it exists
+        if (existingImageUrl) {
+            document.getElementById('currentImageSection').style.display = 'block';
+        }
+    });
+
+    // Form Validation
+    document.getElementById('editForm').addEventListener('submit', function(e) {
+        const rating = ratingInput.value;
+        if (rating === '0') {
+            e.preventDefault();
+            alert('평점을 선택해주세요.');
+            return false;
+        }
+
+        const file = fileInput.files[0];
+        if (file) {
+            if (!file.type.startsWith('image/')) {
+                e.preventDefault();
+                alert('이미지 파일만 업로드할 수 있습니다.');
+                return false;
+            }
+
+            const maxSize = 5 * 1024 * 1024;
+            if (file.size > maxSize) {
+                e.preventDefault();
+                alert('파일 크기는 5MB를 초과할 수 없습니다.');
+                return false;
+            }
+        }
+    });
+</script>
+</body>
+</html>
