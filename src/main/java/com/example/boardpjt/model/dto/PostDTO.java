@@ -19,17 +19,25 @@ public class PostDTO {
 
         private String username;
 
-        // [추가] 이미지 URL 필드
+        // 이미지 URL 필드
         private String imageUrl;
+
+        // [추가] 카테고리, 평점, 태그 필드
+        private String category;
+        private Integer rating;
+        private String tags;
     }
 
-    // [수정] Response record에 imageUrl 추가
+    // [수정] Response record에 category, rating, tags 추가
     public record Response(
             Long id,
             String title,
             String content,
             String username,
             LocalDateTime createdAt,
-            String imageUrl
+            String imageUrl,
+            String category,
+            Integer rating,
+            String tags
     ) {}
 }

@@ -2,40 +2,675 @@
 <html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>회원가입</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>회원가입 - Travelog</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Serif KR', serif;
+            color: #222;
+            background-color: #fafafa;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Header */
+        header {
+            background-color: white;
+            border-bottom: 1px solid #e8e8e8;
+            padding: 20px 40px;
+        }
+
+        nav {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-family: 'Playfair Display', serif;
+            font-size: 28px;
+            font-weight: 700;
+            color: #2D9596;
+            text-decoration: none;
+            letter-spacing: -0.5px;
+        }
+
+        .back-link {
+            color: #666;
+            text-decoration: none;
+            font-size: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: color 0.3s ease;
+        }
+
+        .back-link:hover {
+            color: #2D9596;
+        }
+
+        /* Main Content */
+        main {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 60px 20px;
+        }
+
+        .register-container {
+            background-color: white;
+            border-radius: 12px;
+            padding: 60px;
+            width: 100%;
+            max-width: 520px;
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+        }
+
+        .register-header {
+            text-align: center;
+            margin-bottom: 48px;
+        }
+
+        .register-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+
+        .register-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 32px;
+            font-weight: 700;
+            color: #222;
+            margin-bottom: 12px;
+        }
+
+        .register-subtitle {
+            font-size: 15px;
+            color: #666;
+            line-height: 1.6;
+        }
+
+        /* Alert */
+        .alert {
+            background-color: #FFF3F3;
+            border: 1px solid #FFE0E0;
+            color: #D32F2F;
+            padding: 16px 20px;
+            border-radius: 8px;
+            margin-bottom: 24px;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        /* Form */
+        .form-group {
+            margin-bottom: 24px;
+        }
+
+        label {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        label .required {
+            color: #FF6B6B;
+            margin-left: 2px;
+        }
+
+        input[type="text"],
+        input[type="email"],
+        input[type="password"] {
+            width: 100%;
+            padding: 14px 16px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 15px;
+            font-family: 'Noto Serif KR', serif;
+            transition: all 0.3s ease;
+            outline: none;
+        }
+
+        input:focus {
+            border-color: #2D9596;
+            box-shadow: 0 0 0 3px rgba(45, 149, 150, 0.1);
+        }
+
+        input.error {
+            border-color: #FF6B6B;
+        }
+
+        input.error:focus {
+            box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.1);
+        }
+
+        input::placeholder {
+            color: #999;
+        }
+
+        .form-text {
+            display: block;
+            margin-top: 8px;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .form-text.text-muted {
+            color: #999;
+        }
+
+        .form-text.text-danger {
+            color: #D32F2F;
+        }
+
+        .form-text.text-success {
+            color: #2D9596;
+        }
+
+        /* Password Strength Indicator */
+        .password-strength {
+            margin-top: 12px;
+            display: none;
+        }
+
+        .password-strength.active {
+            display: block;
+        }
+
+        .strength-bar {
+            height: 4px;
+            background-color: #e8e8e8;
+            border-radius: 2px;
+            margin-bottom: 8px;
+            overflow: hidden;
+        }
+
+        .strength-fill {
+            height: 100%;
+            transition: all 0.3s ease;
+            width: 0;
+        }
+
+        .strength-fill.weak {
+            width: 33%;
+            background-color: #FF6B6B;
+        }
+
+        .strength-fill.medium {
+            width: 66%;
+            background-color: #FFB800;
+        }
+
+        .strength-fill.strong {
+            width: 100%;
+            background-color: #2D9596;
+        }
+
+        .strength-text {
+            font-size: 12px;
+            color: #666;
+        }
+
+        /* Terms Agreement */
+        .terms-wrapper {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 24px;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .checkbox-item:last-child {
+            margin-bottom: 0;
+        }
+
+        input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            margin-top: 2px;
+            flex-shrink: 0;
+        }
+
+        .checkbox-label {
+            font-size: 14px;
+            color: #333;
+            cursor: pointer;
+            user-select: none;
+            flex: 1;
+        }
+
+        .checkbox-label.all {
+            font-weight: 600;
+            font-size: 15px;
+        }
+
+        .checkbox-label a {
+            color: #2D9596;
+            text-decoration: underline;
+            margin-left: 4px;
+        }
+
+        .checkbox-label a:hover {
+            color: #267C7D;
+        }
+
+        .terms-divider {
+            height: 1px;
+            background-color: #e0e0e0;
+            margin: 16px 0;
+        }
+
+        /* Buttons */
+        .btn {
+            width: 100%;
+            padding: 16px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+        }
+
+        .btn-primary {
+            background-color: #2D9596;
+            color: white;
+            margin-bottom: 12px;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background-color: #267C7D;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(45, 149, 150, 0.25);
+        }
+
+        .btn-primary:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
+        /* Login Link */
+        .login-link {
+            margin-top: 32px;
+            text-align: center;
+            font-size: 15px;
+            color: #666;
+        }
+
+        .login-link a {
+            color: #2D9596;
+            text-decoration: none;
+            font-weight: 600;
+            margin-left: 4px;
+        }
+
+        .login-link a:hover {
+            text-decoration: underline;
+        }
+
+        /* Footer */
+        footer {
+            background-color: white;
+            border-top: 1px solid #e8e8e8;
+            padding: 24px 40px;
+            text-align: center;
+        }
+
+        .footer-text {
+            font-size: 13px;
+            color: #999;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            header {
+                padding: 16px 20px;
+            }
+
+            .logo {
+                font-size: 24px;
+            }
+
+            main {
+                padding: 40px 20px;
+            }
+
+            .register-container {
+                padding: 40px 24px;
+            }
+
+            .register-title {
+                font-size: 28px;
+            }
+
+            .register-subtitle {
+                font-size: 14px;
+            }
+        }
+
+        /* Animation */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .register-container {
+            animation: fadeInUp 0.6s ease-out;
+        }
+    </style>
 </head>
 <body>
-<div th:replace="~{fragments/header :: headerFragment}"></div>
+<!-- Header -->
+<header>
+    <nav>
+        <a href="/" class="logo">Travelog</a>
+        <a href="/auth/login" class="back-link">
+            <span>←</span>
+            <span>로그인</span>
+        </a>
+    </nav>
+</header>
 
-<main class="container mt-4">
-    <div class="row justify-content-center">
-        <div class="col-md-6">
-            <h1 class="text-center mb-4">회원가입</h1>
-            <div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
-            <form th:action="@{/auth/register}" th:object="${userRegisterDTO}" method="post">
-                <div class="mb-3">
-                    <label for="username" class="form-label">사용자명</label>
-                    <input type="text" class="form-control" id="username" th:field="*{username}">
-                    <div th:if="${#fields.hasErrors('username')}" th:errors="*{username}" class="form-text text-danger"></div>
+<!-- Main Content -->
+<main>
+    <div class="register-container">
+        <div class="register-header">
+            <div class="register-icon">✈️</div>
+            <h1 class="register-title">회원가입</h1>
+            <p class="register-subtitle">Travelog과 함께<br>여행을 기록하고 공유하세요</p>
+        </div>
+
+        <!-- Error Message -->
+        <div th:if="${error}" class="alert" th:text="${error}"></div>
+
+        <!-- Registration Form -->
+        <form th:action="@{/auth/register}" th:object="${userRegisterDTO}" method="post" id="registerForm">
+            <!-- Username -->
+            <div class="form-group">
+                <label for="username">
+                    이메일 <span class="required">*</span>
+                </label>
+                <input
+                        type="email"
+                        id="username"
+                        th:field="*{username}"
+                        placeholder="example@email.com"
+                        required
+                        autofocus>
+                <div th:if="${#fields.hasErrors('username')}"
+                     th:errors="*{username}"
+                     class="form-text text-danger"></div>
+                <small class="form-text text-muted">로그인 시 사용할 이메일 주소를 입력하세요</small>
+            </div>
+
+            <!-- Nickname (Optional) -->
+<!--            <div class="form-group">
+                <label for="nickname">
+                    닉네임
+                </label>
+                <input
+                        type="text"
+                        id="nickname"
+                        name="nickname"
+                        placeholder="여행을 좋아하는 사람"
+                        maxlength="20">
+                <small class="form-text text-muted">다른 사용자에게 보여질 이름입니다 (선택사항)</small>
+            </div>-->
+
+            <!-- Password -->
+            <div class="form-group">
+                <label for="password">
+                    비밀번호 <span class="required">*</span>
+                </label>
+                <input
+                        type="password"
+                        id="password"
+                        th:field="*{password}"
+                        placeholder="8자 이상, 영문+숫자 조합"
+                        required>
+                <div th:if="${#fields.hasErrors('password')}"
+                     th:errors="*{password}"
+                     class="form-text text-danger"></div>
+
+                <!-- Password Strength Indicator -->
+                <div class="password-strength" id="passwordStrength">
+                    <div class="strength-bar">
+                        <div class="strength-fill" id="strengthFill"></div>
+                    </div>
+                    <small class="strength-text" id="strengthText"></small>
                 </div>
-                <div class="mb-3">
-                    <label for="password" class="form-label">비밀번호</label>
-                    <input type="password" class="form-control" id="password" th:field="*{password}">
-                    <div th:if="${#fields.hasErrors('password')}" th:errors="*{password}" class="form-text text-danger"></div>
+            </div>
+
+            <!-- Password Confirm -->
+            <div class="form-group">
+                <label for="passwordConfirm">
+                    비밀번호 확인 <span class="required">*</span>
+                </label>
+                <input
+                        type="password"
+                        id="passwordConfirm"
+                        th:field="*{passwordConfirm}"
+                        placeholder="비밀번호를 다시 입력하세요"
+                        required>
+                <div th:if="${#fields.hasErrors('passwordConfirm')}"
+                     th:errors="*{passwordConfirm}"
+                     class="form-text text-danger"></div>
+                <small class="form-text text-success" id="passwordMatch" style="display: none;">
+                    ✓ 비밀번호가 일치합니다
+                </small>
+                <small class="form-text text-danger" id="passwordMismatch" style="display: none;">
+                    비밀번호가 일치하지 않습니다
+                </small>
+            </div>
+
+            <!-- Terms Agreement -->
+            <div class="terms-wrapper">
+                <div class="checkbox-item">
+                    <input type="checkbox" id="agreeAll">
+                    <label for="agreeAll" class="checkbox-label all">
+                        전체 동의
+                    </label>
                 </div>
-                <div class="mb-3">
-                    <label for="passwordConfirm" class="form-label">비밀번호 확인</label>
-                    <input type="password" class="form-control" id="passwordConfirm" th:field="*{passwordConfirm}">
-                    <div th:if="${#fields.hasErrors('passwordConfirm')}" th:errors="*{passwordConfirm}" class="form-text text-danger"></div>
+
+                <div class="terms-divider"></div>
+
+                <div class="checkbox-item">
+                    <input type="checkbox" class="terms-checkbox required-terms" id="agreeTerms" required>
+                    <label for="agreeTerms" class="checkbox-label">
+                        [필수] 이용약관 동의
+                        <a href="/terms" target="_blank">보기</a>
+                    </label>
                 </div>
-                <button type="submit" class="btn btn-primary w-100">가입</button>
-            </form>
+
+                <div class="checkbox-item">
+                    <input type="checkbox" class="terms-checkbox required-terms" id="agreePrivacy" required>
+                    <label for="agreePrivacy" class="checkbox-label">
+                        [필수] 개인정보 처리방침 동의
+                        <a href="/privacy" target="_blank">보기</a>
+                    </label>
+                </div>
+
+                <div class="checkbox-item">
+                    <input type="checkbox" class="terms-checkbox" id="agreeMarketing">
+                    <label for="agreeMarketing" class="checkbox-label">
+                        [선택] 마케팅 정보 수신 동의
+                    </label>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary" id="submitBtn">
+                가입하기
+            </button>
+        </form>
+
+        <!-- Login Link -->
+        <div class="login-link">
+            이미 계정이 있으신가요?
+            <a th:href="@{/auth/login}">로그인</a>
         </div>
     </div>
 </main>
 
-<div th:replace="~{fragments/footer :: footerFragment}"></div>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<!-- Footer -->
+<footer>
+    <p class="footer-text">© 2025 Travelog. All rights reserved.</p>
+</footer>
+
+<script>
+    // Password Strength Checker
+    const passwordInput = document.getElementById('password');
+    const strengthIndicator = document.getElementById('passwordStrength');
+    const strengthFill = document.getElementById('strengthFill');
+    const strengthText = document.getElementById('strengthText');
+
+    passwordInput.addEventListener('input', function() {
+        const password = this.value;
+
+        if (password.length === 0) {
+            strengthIndicator.classList.remove('active');
+            return;
+        }
+
+        strengthIndicator.classList.add('active');
+
+        let strength = 0;
+
+        // Length check
+        if (password.length >= 8) strength++;
+        if (password.length >= 12) strength++;
+
+        // Character variety
+        if (/[a-z]/.test(password) && /[A-Z]/.test(password)) strength++;
+        if (/[0-9]/.test(password)) strength++;
+        if (/[^a-zA-Z0-9]/.test(password)) strength++;
+
+        // Update UI
+        strengthFill.className = 'strength-fill';
+
+        if (strength <= 2) {
+            strengthFill.classList.add('weak');
+            strengthText.textContent = '약한 비밀번호';
+            strengthText.style.color = '#FF6B6B';
+        } else if (strength <= 4) {
+            strengthFill.classList.add('medium');
+            strengthText.textContent = '보통 비밀번호';
+            strengthText.style.color = '#FFB800';
+        } else {
+            strengthFill.classList.add('strong');
+            strengthText.textContent = '강력한 비밀번호';
+            strengthText.style.color = '#2D9596';
+        }
+    });
+
+    // Password Match Checker
+    const passwordConfirmInput = document.getElementById('passwordConfirm');
+    const matchMessage = document.getElementById('passwordMatch');
+    const mismatchMessage = document.getElementById('passwordMismatch');
+
+    function checkPasswordMatch() {
+        const password = passwordInput.value;
+        const passwordConfirm = passwordConfirmInput.value;
+
+        if (passwordConfirm.length === 0) {
+            matchMessage.style.display = 'none';
+            mismatchMessage.style.display = 'none';
+            passwordConfirmInput.classList.remove('error');
+            return;
+        }
+
+        if (password === passwordConfirm) {
+            matchMessage.style.display = 'block';
+            mismatchMessage.style.display = 'none';
+            passwordConfirmInput.classList.remove('error');
+        } else {
+            matchMessage.style.display = 'none';
+            mismatchMessage.style.display = 'block';
+            passwordConfirmInput.classList.add('error');
+        }
+    }
+
+    passwordInput.addEventListener('input', checkPasswordMatch);
+    passwordConfirmInput.addEventListener('input', checkPasswordMatch);
+
+    // Terms Agreement - Select All
+    const agreeAllCheckbox = document.getElementById('agreeAll');
+    const termsCheckboxes = document.querySelectorAll('.terms-checkbox');
+
+    agreeAllCheckbox.addEventListener('change', function() {
+        termsCheckboxes.forEach(checkbox => {
+            checkbox.checked = this.checked;
+        });
+    });
+
+    termsCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            const allChecked = Array.from(termsCheckboxes).every(cb => cb.checked);
+            agreeAllCheckbox.checked = allChecked;
+        });
+    });
+
+    // Form Validation
+    const form = document.getElementById('registerForm');
+    const submitBtn = document.getElementById('submitBtn');
+
+    form.addEventListener('submit', function(e) {
+        const requiredTerms = document.querySelectorAll('.required-terms');
+        const allRequiredChecked = Array.from(requiredTerms).every(cb => cb.checked);
+
+        if (!allRequiredChecked) {
+            e.preventDefault();
+            alert('필수 약관에 동의해주세요.');
+            return false;
+        }
+
+        const password = passwordInput.value;
+        const passwordConfirm = passwordConfirmInput.value;
+
+        if (password !== passwordConfirm) {
+            e.preventDefault();
+            alert('비밀번호가 일치하지 않습니다.');
+            passwordConfirmInput.focus();
+            return false;
+        }
+
+        if (password.length < 8) {
+            e.preventDefault();
+            alert('비밀번호는 8자 이상이어야 합니다.');
+            passwordInput.focus();
+            return false;
+        }
+    });
+</script>
 </body>
 </html>

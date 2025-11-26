@@ -1,9 +1,16 @@
 package com.example.boardpjt.controller;
 
+import com.example.boardpjt.model.entity.UserAccount;
 import com.example.boardpjt.service.FollowService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @RestController
 @RequiredArgsConstructor
@@ -33,5 +40,31 @@ public class FollowApiController {
     @GetMapping("/{userId}/followerCount")
     public int followerCount(@PathVariable Long userId) {
         return followService.getFollowerCount(userId);
+    }
+
+    @GetMapping("/{userId}/followers")
+    public List<Map<String, Object>> getFollowers(@PathVariable Long userId) {
+        Set<UserAccount> followers = followService.getFollowers(userId);
+        return followers.stream()
+                .map(user -> {
+                    Map<String, Object> userMap = new HashMap<>();
+                    userMap.put("id", user.getId());
+                    userMap.put("username", user.getUsername());
+                    return userMap;
+                })
+                .collect(Collectors.toList());
+    }
+
+    @GetMapping("/{userId}/following")
+    public List<Map<String, Object>> getFollowing(@PathVariable Long userId) {
+        Set<UserAccount> following = followService.getFollowing(userId);
+        return following.stream()
+                .map(user -> {
+                    Map<String, Object> userMap = new HashMap<>();
+                    userMap.put("id", user.getId());
+                    userMap.put("username", user.getUsername());
+                    return userMap;
+                })
+                .collect(Collectors.toList());
     }
 }

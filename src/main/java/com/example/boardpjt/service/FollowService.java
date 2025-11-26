@@ -6,6 +6,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Set;
+
 @Service
 @RequiredArgsConstructor
 public class FollowService {
@@ -46,5 +48,30 @@ public class FollowService {
 
     public int getFollowerCount(Long userId) {
         return userAccountRepository.findById(userId).orElseThrow().getFollowerCount();
+    }
+
+    @Transactional(readOnly = true)
+    public Set<UserAccount> getFollowers(Long userId) {
+        UserAccount user = userAccountRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("사용자 없음"));
+        return user.getFollowers();
+    }
+
+    @Transactional(readOnly = true)
+    public Set<UserAccount> getFollowing(Long userId) {
+        UserAccount user = userAccountRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("사용자 없음"));
+        return user.getFollowing();
+    }
+
+    @Transactional(readOnly = true)
+    public boolean isFollowing(String followerUsername, Long targetId) {
+        UserAccount follower = userAccountRepository.findByUsername(followerUsername)
+                .orElse(null);
+        if (follower == null) {
+            return false;
+        }
+        return follower.getFollowing().stream()
+                .anyMatch(user -> user.getId().equals(targetId));
     }
 }

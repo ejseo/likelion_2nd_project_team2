@@ -4,6 +4,7 @@ import com.example.boardpjt.model.dto.PostDTO;
 import com.example.boardpjt.model.entity.Post;
 import com.example.boardpjt.model.entity.UserAccount;
 import com.example.boardpjt.service.FileStorageService;
+import com.example.boardpjt.service.FollowService;
 import com.example.boardpjt.service.PostService;
 import com.example.boardpjt.service.UserAccountService;
 import jakarta.validation.Valid;
@@ -27,23 +28,28 @@ public class PostController {
 
     private final PostService postService;
     private final UserAccountService userAccountService;
-    // [추가] FileStorageService 주입
     private final FileStorageService fileStorageService;
+    private final FollowService followService;
 
     @GetMapping
-    public String list(Model model, @RequestParam(defaultValue = "1") int page, @RequestParam(required = false) String keyword) {
+    public String list(Model model,
+                      @RequestParam(defaultValue = "1") int page,
+                      @RequestParam(required = false) String keyword,
+                      @RequestParam(required = false) String category) {
         keyword = (keyword == null) ? "" : keyword;
-        Page<Post> postPage = postService.findWithPagingAndSearch(keyword, page - 1);
+        Page<Post> postPage = postService.findWithPagingAndSearchAndCategory(keyword, category, page - 1);
         model.addAttribute("currentPage", page);
         model.addAttribute("totalPages", postPage.getTotalPages());
         model.addAttribute("posts",
-                // [수정] DTO 변환 시 imageUrl 추가
+                // [수정] DTO 변환 시 category, rating, tags 추가
                 postPage.getContent().stream().map(p -> new PostDTO.Response(
                         p.getId(), p.getTitle(), p.getContent(),
-                        p.getAuthor().getUsername(), p.getCreatedAt(), p.getImageUrl()
+                        p.getAuthor().getUsername(), p.getCreatedAt(), p.getImageUrl(),
+                        p.getCategory(), p.getRating(), p.getTags()
                 )).toList()
         );
         model.addAttribute("keyword", keyword);
+        model.addAttribute("selectedCategory", category != null ? category : "");
         return "post/list";
     }
 
@@ -52,7 +58,7 @@ public class PostController {
                          BindingResult bindingResult,
                          @RequestParam("file") MultipartFile file,
                          Authentication authentication,
-                         RedirectAttributes redirectAttributes) { // RedirectAttributes 추가
+                         RedirectAttributes redirectAttributes) {
         if (bindingResult.hasErrors()) {
             return "post/form";
         }
@@ -64,17 +70,14 @@ public class PostController {
             postService.createPost(dto);
 
         } catch (IOException | IllegalArgumentException e) {
-            // [추가] 파일 업로드 중 오류 발생 시
-            e.printStackTrace(); // 서버 로그에 오류 기록
-            // 사용자에게 보여줄 오류 메시지를 Flash Attribute로 추가
+            e.printStackTrace();
             redirectAttributes.addFlashAttribute("error", "파일 업로드에 실패했습니다: " + e.getMessage());
-            return "redirect:/posts/new"; // 작성 폼으로 다시 리다이렉트
+            return "redirect:/posts/new";
         }
 
         return "redirect:/posts";
     }
 
-    // edit 메서드도 동일하게 '파일 이름'을 저장하도록 유지합니다.
     @PostMapping("/{id}/edit")
     public String edit(@PathVariable Long id,
                        @Valid @ModelAttribute("post") PostDTO.Request dto,
@@ -82,7 +85,7 @@ public class PostController {
                        @RequestParam("file") MultipartFile file,
                        Authentication authentication,
                        Model model,
-                       RedirectAttributes redirectAttributes) { // RedirectAttributes 추가
+                       RedirectAttributes redirectAttributes) {
         if (bindingResult.hasErrors()) {
             model.addAttribute("postId", id);
             return "post/edit";
@@ -99,21 +102,27 @@ public class PostController {
             postService.updatePost(id, dto);
 
         } catch (IOException | IllegalArgumentException e) {
-            // [추가] 파일 업로드 중 오류 발생 시 처리
-            e.printStackTrace(); // 서버 로그에 오류 기록
-            // 사용자에게 보여줄 오류 메시지를 Flash Attribute로 추가
+            e.printStackTrace();
             redirectAttributes.addFlashAttribute("error", "파일 수정에 실패했습니다: " + e.getMessage());
-            return "redirect:/posts/" + id + "/edit"; // 수정 폼으로 다시 리다이렉트
+            return "redirect:/posts/" + id + "/edit";
         }
 
         return "redirect:/posts/" + id;
     }
 
-
-    // ... detail, form, delete 등 나머지 메서드는 기존과 동일하게 유지 ...
     @GetMapping("/{id}")
-    public String detail(@PathVariable Long id, Model model) {
-        model.addAttribute("post", postService.findById(id));
+    public String detail(@PathVariable Long id, Model model, Authentication authentication) {
+        Post post = postService.findById(id);
+        model.addAttribute("post", post);
+
+        // 팔로우 여부 체크
+        if (authentication != null) {
+            boolean isFollowing = followService.isFollowing(authentication.getName(), post.getAuthor().getId());
+            model.addAttribute("followCheck", isFollowing);
+        } else {
+            model.addAttribute("followCheck", false);
+        }
+
         return "post/detail";
     }
 
@@ -129,8 +138,14 @@ public class PostController {
         PostDTO.Request dto = new PostDTO.Request();
         dto.setTitle(post.getTitle());
         dto.setContent(post.getContent());
+        // [추가] 기존 카테고리, 평점, 태그 값 로드
+        dto.setCategory(post.getCategory());
+        dto.setRating(post.getRating());
+        dto.setTags(post.getTags());
         model.addAttribute("post", dto);
         model.addAttribute("postId", id);
+        // [추가] 기존 이미지 URL도 전달 (수정 폼에서 미리보기용)
+        model.addAttribute("existingImageUrl", post.getImageUrl());
         return "post/edit";
     }
 

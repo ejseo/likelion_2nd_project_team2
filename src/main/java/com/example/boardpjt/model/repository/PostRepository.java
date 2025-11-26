@@ -34,6 +34,16 @@ public interface PostRepository extends JpaRepository<Post, Long> {
     Page<Post> findByTitleContainingOrContentContainingOrderByIdDesc(
             String title, String content, Pageable pageable);
     // Desc -> PK (Long id)
+
+    // 사용자별 게시글 조회
+    Page<Post> findByAuthor_UsernameOrderByIdDesc(String username, Pageable pageable);
+
+    // 카테고리로 필터링 (검색어 포함)
+    Page<Post> findByCategoryAndTitleContainingOrCategoryAndContentContainingOrderByIdDesc(
+            String category1, String title, String category2, String content, Pageable pageable);
+
+    // 카테고리로만 필터링
+    Page<Post> findByCategoryOrderByIdDesc(String category, Pageable pageable);
 }
 
 // === Repository 확장 시 고려사항 ===

@@ -20,6 +20,16 @@ public class Post extends BaseEntity {
     // [추가] 이미지 파일 URL을 저장할 필드
     private String imageUrl;
 
+    // [추가] 카테고리 (beach, mountain, city, food, culture, activity)
+    private String category;
+
+    // [추가] 평점 (1-5)
+    private Integer rating;
+
+    // [추가] 태그 (쉼표로 구분된 문자열)
+    @Column(length = 500)
+    private String tags;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_account_id", nullable = false)
     private UserAccount author;

@@ -31,6 +31,10 @@ public class PostService {
         post.setContent(dto.getContent());
         // [추가] 이미지 URL 설정
         post.setImageUrl(dto.getImageUrl());
+        // [추가] 카테고리, 평점, 태그 설정
+        post.setCategory(dto.getCategory());
+        post.setRating(dto.getRating());
+        post.setTags(dto.getTags());
         return postRepository.save(post);
     }
 
@@ -46,6 +50,10 @@ public class PostService {
         if (dto.getImageUrl() != null) {
             post.setImageUrl(dto.getImageUrl());
         }
+        // [추가] 카테고리, 평점, 태그 업데이트
+        post.setCategory(dto.getCategory());
+        post.setRating(dto.getRating());
+        post.setTags(dto.getTags());
         postRepository.save(post);
     }
 
@@ -57,6 +65,24 @@ public class PostService {
     }
 
     @Transactional(readOnly = true)
+    public Page<Post> findWithPagingAndSearchAndCategory(String keyword, String category, int page) {
+        Pageable pageable = PageRequest.of(page, 5);
+        keyword = (keyword == null) ? "" : keyword;
+
+        if (category == null || category.isEmpty()) {
+            // 카테고리가 없으면 기존 검색
+            return postRepository.findByTitleContainingOrContentContainingOrderByIdDesc(keyword, keyword, pageable);
+        } else if (keyword.isEmpty()) {
+            // 검색어가 없으면 카테고리로만 필터링
+            return postRepository.findByCategoryOrderByIdDesc(category, pageable);
+        } else {
+            // 카테고리와 검색어 모두 사용
+            return postRepository.findByCategoryAndTitleContainingOrCategoryAndContentContainingOrderByIdDesc(
+                    category, keyword, category, keyword, pageable);
+        }
+    }
+
+    @Transactional(readOnly = true)
     public Post findById(Long id) {
         return postRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("게시물 없음"));
@@ -65,5 +91,18 @@ public class PostService {
     @Transactional
     public void deleteById(Long id) {
         postRepository.deleteById(id);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<Post> findByUsername(String username, int page) {
+        Pageable pageable = PageRequest.of(page, 10); // 페이지당 10개
+        return postRepository.findByAuthor_UsernameOrderByIdDesc(username, pageable);
+    }
+
+    @Transactional(readOnly = true)
+    public List<Post> findRecentPosts(int limit) {
+        Pageable pageable = PageRequest.of(0, limit);
+        Page<Post> page = postRepository.findByTitleContainingOrContentContainingOrderByIdDesc("", "", pageable);
+        return page.getContent();
     }
 }

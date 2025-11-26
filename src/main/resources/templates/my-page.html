@@ -2,36 +2,1111 @@
 <html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>마이페이지</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>마이페이지 - Travelog</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Serif KR', serif;
+            color: #222;
+            line-height: 1.8;
+            background-color: #fafafa;
+        }
+
+        /* Header */
+        header {
+            background-color: white;
+            border-bottom: 1px solid #e8e8e8;
+            padding: 20px 40px;
+        }
+
+        nav {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-family: 'Playfair Display', serif;
+            font-size: 28px;
+            font-weight: 700;
+            color: #2D9596;
+            text-decoration: none;
+            letter-spacing: -0.5px;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 32px;
+            align-items: center;
+        }
+
+        .nav-links a {
+            color: #444;
+            text-decoration: none;
+            font-size: 15px;
+            transition: color 0.3s ease;
+        }
+
+        .nav-links a:hover {
+            color: #2D9596;
+        }
+
+        .btn-write {
+            padding: 8px 24px;
+            background-color: #2D9596;
+            color: white;
+            border-radius: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-write:hover {
+            background-color: #267C7D;
+            transform: translateY(-1px);
+            color: white;
+        }
+
+        /* Main Content */
+        main {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 60px 40px 100px;
+        }
+
+        /* Success Alert */
+        .alert-success {
+            background-color: #E8F5F5;
+            border: 1px solid #A5D6D6;
+            color: #2D9596;
+            padding: 16px 20px;
+            border-radius: 8px;
+            margin-bottom: 32px;
+            font-size: 14px;
+        }
+
+        /* Profile Header */
+        .profile-header {
+            background-color: white;
+            border-radius: 12px;
+            padding: 48px;
+            margin-bottom: 40px;
+            display: flex;
+            align-items: center;
+            gap: 32px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+        }
+
+        .profile-avatar {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #2D9596, #5EAEAF);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+            color: white;
+        }
+
+        .profile-info {
+            flex: 1;
+        }
+
+        .profile-name {
+            font-size: 28px;
+            font-weight: 700;
+            color: #222;
+            margin-bottom: 8px;
+        }
+
+        .profile-role {
+            font-size: 14px;
+            color: #999;
+            margin-bottom: 24px;
+        }
+
+        .profile-stats {
+            display: flex;
+            gap: 32px;
+        }
+
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: #2D9596;
+        }
+
+        .stat-label {
+            font-size: 13px;
+            color: #666;
+        }
+
+        /* Tab Navigation */
+        .tab-navigation {
+            display: flex;
+            gap: 0;
+            border-bottom: 2px solid #e8e8e8;
+            margin-bottom: 40px;
+            overflow-x: auto;
+        }
+
+        .tab-btn {
+            padding: 16px 32px;
+            background: none;
+            border: none;
+            font-size: 16px;
+            font-weight: 600;
+            color: #999;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+
+        .tab-btn:hover {
+            color: #2D9596;
+        }
+
+        .tab-btn.active {
+            color: #2D9596;
+        }
+
+        .tab-btn.active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background-color: #2D9596;
+        }
+
+        /* Tab Content */
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Posts Grid */
+        .posts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 32px;
+        }
+
+        .post-card-wrapper {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .post-card {
+            background-color: white;
+            border-radius: 8px 8px 0 0;
+            overflow: hidden;
+            text-decoration: none;
+            color: inherit;
+            transition: all 0.3s ease;
+            border: 1px solid #e8e8e8;
+            border-bottom: none;
+            display: block;
+        }
+
+        .post-card:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        .post-image {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            background-color: #e8e8e8;
+        }
+
+        .post-content {
+            padding: 20px;
+        }
+
+        .post-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #222;
+            margin-bottom: 12px;
+            line-height: 1.4;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .post-meta {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 13px;
+            color: #999;
+        }
+
+        .post-date {
+            color: #999;
+        }
+
+        .post-stats {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .stat {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .post-rating {
+            color: #FFB800;
+            font-weight: 500;
+        }
+
+        .post-actions {
+            display: flex;
+            gap: 8px;
+            padding: 12px;
+            background-color: white;
+            border: 1px solid #e8e8e8;
+            border-top: none;
+            border-radius: 0 0 8px 8px;
+        }
+
+        .btn-edit,
+        .btn-delete {
+            flex: 1;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            text-align: center;
+            border: none;
+        }
+
+        .btn-edit {
+            background-color: #FFF8E1;
+            color: #E6A600;
+        }
+
+        .btn-edit:hover {
+            background-color: #FFE082;
+            color: #E6A600;
+        }
+
+        .btn-delete {
+            background-color: #FFF3F3;
+            color: #FF6B6B;
+        }
+
+        .btn-delete:hover {
+            background-color: #FFE0E0;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 80px 40px;
+            background-color: white;
+            border-radius: 12px;
+            border: 1px solid #e8e8e8;
+        }
+
+        .empty-icon {
+            font-size: 64px;
+            margin-bottom: 24px;
+            opacity: 0.3;
+        }
+
+        .empty-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #666;
+            margin-bottom: 12px;
+        }
+
+        .empty-text {
+            font-size: 15px;
+            color: #999;
+            margin-bottom: 24px;
+        }
+
+        .btn-empty {
+            display: inline-block;
+            padding: 12px 32px;
+            background-color: #2D9596;
+            color: white;
+            text-decoration: none;
+            border-radius: 24px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn-empty:hover {
+            background-color: #267C7D;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(45, 149, 150, 0.25);
+            color: white;
+        }
+
+        /* Settings Section */
+        .settings-section {
+            background-color: white;
+            border-radius: 12px;
+            padding: 32px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+        }
+
+        .settings-group {
+            margin-bottom: 40px;
+        }
+
+        .settings-group:last-child {
+            margin-bottom: 0;
+        }
+
+        .settings-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #222;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #e8e8e8;
+        }
+
+        .settings-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .settings-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 20px;
+            background-color: #fafafa;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .settings-item:hover {
+            background-color: #f0f0f0;
+        }
+
+        .settings-item.danger {
+            color: #FF6B6B;
+        }
+
+        .settings-item.danger:hover {
+            background-color: #FFF3F3;
+        }
+
+        .settings-item-label {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 15px;
+        }
+
+        .settings-item-icon {
+            font-size: 20px;
+        }
+
+        .settings-item-arrow {
+            color: #ccc;
+        }
+
+        /* Toggle Switch */
+        .toggle-switch {
+            position: relative;
+            width: 48px;
+            height: 24px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: 0.3s;
+            border-radius: 24px;
+        }
+
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: 0.3s;
+            border-radius: 50%;
+        }
+
+        input:checked + .toggle-slider {
+            background-color: #2D9596;
+        }
+
+        input:checked + .toggle-slider:before {
+            transform: translateX(24px);
+        }
+
+        /* Footer */
+        footer {
+            background-color: #1a1a1a;
+            color: #999;
+            padding: 60px 40px 40px;
+            margin-top: 80px;
+        }
+
+        .footer-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr;
+            gap: 60px;
+            margin-bottom: 40px;
+        }
+
+        .footer-logo {
+            font-family: 'Playfair Display', serif;
+            font-size: 24px;
+            font-weight: 700;
+            color: #2D9596;
+            margin-bottom: 16px;
+        }
+
+        .footer-description {
+            font-size: 14px;
+            line-height: 1.8;
+            color: #666;
+        }
+
+        .footer-section h4 {
+            color: #fff;
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+
+        .footer-links {
+            list-style: none;
+        }
+
+        .footer-links li {
+            margin-bottom: 12px;
+        }
+
+        .footer-links a {
+            color: #999;
+            text-decoration: none;
+            font-size: 14px;
+            transition: color 0.3s ease;
+        }
+
+        .footer-links a:hover {
+            color: #2D9596;
+        }
+
+        .footer-bottom {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding-top: 30px;
+            border-top: 1px solid #333;
+            text-align: center;
+            font-size: 13px;
+            color: #666;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            nav {
+                padding: 16px 20px;
+            }
+
+            .logo {
+                font-size: 24px;
+            }
+
+            .nav-links {
+                gap: 16px;
+            }
+
+            .nav-links a {
+                font-size: 14px;
+            }
+
+            main {
+                padding: 40px 20px 80px;
+            }
+
+            .profile-header {
+                flex-direction: column;
+                text-align: center;
+                padding: 32px 24px;
+            }
+
+            .profile-stats {
+                width: 100%;
+                justify-content: space-around;
+            }
+
+            .tab-navigation {
+                overflow-x: auto;
+            }
+
+            .tab-btn {
+                padding: 16px 20px;
+            }
+
+            .posts-grid {
+                grid-template-columns: 1fr;
+                gap: 24px;
+            }
+
+            .footer-content {
+                grid-template-columns: 1fr;
+                gap: 40px;
+            }
+        }
+
+        /* Animation */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .profile-header,
+        .tab-navigation,
+        .posts-grid,
+        .settings-section {
+            animation: fadeIn 0.6s ease-out;
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 2000;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background-color: white;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 80vh;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            animation: slideUp 0.3s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .modal-header {
+            padding: 24px;
+            border-bottom: 1px solid #e8e8e8;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #222;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 28px;
+            color: #999;
+            cursor: pointer;
+            padding: 0;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+        }
+
+        .modal-close:hover {
+            background-color: #f0f0f0;
+            color: #333;
+        }
+
+        .modal-body {
+            padding: 0;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .user-list-item {
+            padding: 16px 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            color: inherit;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .user-list-item:hover {
+            background-color: #f8f9fa;
+        }
+
+        .user-list-item:last-child {
+            border-bottom: none;
+        }
+
+        .user-list-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #2D9596, #5EAEAF);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: white;
+            flex-shrink: 0;
+        }
+
+        .user-list-info {
+            flex: 1;
+        }
+
+        .user-list-username {
+            font-size: 16px;
+            font-weight: 600;
+            color: #222;
+        }
+
+        .empty-list {
+            padding: 60px 24px;
+            text-align: center;
+            color: #999;
+        }
+
+        .empty-list-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+
+        .empty-list-text {
+            font-size: 15px;
+        }
+
+        .stat-item:hover {
+            opacity: 0.8;
+        }
+    </style>
 </head>
 <body>
-<div th:replace="~{fragments/header :: headerFragment}"></div>
-
-<main class="container mt-4">
-    <h1 class="mb-4">마이페이지</h1>
-    <div th:if="${success}" class="alert alert-success" th:text="${success}"></div>
-
-    <div class="card" th:if="${#authentication != null and #authentication.isAuthenticated()}">
-        <div class="card-header">
-            내 정보
+<!-- Header -->
+<header>
+    <nav>
+        <a href="/" class="logo">Travelog</a>
+        <div class="nav-links">
+            <a href="/posts">여행 이야기</a>
+            <a href="/about">소개</a>
+            <a href="/my-page">마이페이지</a>
+            <a href="/posts/new" class="btn-write">글쓰기</a>
         </div>
-        <div class="card-body">
-            <p class="card-text"><strong>사용자명:</strong> <span th:text="${#authentication.name}"></span></p>
-            <p class="card-text"><strong>권한:</strong> <span th:text="${#authentication.principal.authorities}"></span></p>
+    </nav>
+</header>
+
+<!-- Main Content -->
+<main>
+    <!-- Success Alert -->
+    <div th:if="${success}" class="alert-success" th:text="${success}"></div>
+
+    <!-- Profile Header -->
+    <div class="profile-header" th:if="${#authentication != null and #authentication.isAuthenticated()}">
+        <div class="profile-avatar">👤</div>
+        <div class="profile-info">
+            <div class="profile-name" th:text="${#authentication.name}">여행러버</div>
+            <div class="profile-role" th:text="${#authentication.principal.authorities}">ROLE_USER</div>
+            <div class="profile-stats">
+                <div class="stat-item">
+                    <div class="stat-value" th:text="${totalPosts != null ? totalPosts : 0}">0</div>
+                    <div class="stat-label">작성한 글</div>
+                </div>
+                <div class="stat-item" style="cursor: pointer;" onclick="showFollowModal('following')" th:if="${user != null}">
+                    <div class="stat-value" th:text="${user.followingCount}">0</div>
+                    <div class="stat-label">팔로잉</div>
+                </div>
+                <div class="stat-item" style="cursor: pointer;" onclick="showFollowModal('followers')" th:if="${user != null}">
+                    <div class="stat-value" th:text="${user.followerCount}">0</div>
+                    <div class="stat-label">팔로워</div>
+                </div>
+            </div>
         </div>
     </div>
 
-    <div class="mt-4">
-        <h2>계정 관리</h2>
-        <div class="list-group">
-            <a th:href="@{/user/change-password}" class="list-group-item list-group-item-action">비밀번호 변경</a>
-            <a th:href="@{/user/withdraw}" class="list-group-item list-group-item-action text-danger">회원 탈퇴</a>
+    <!-- Tab Navigation -->
+    <div class="tab-navigation">
+        <button class="tab-btn active" data-tab="my-posts">나의 리뷰</button>
+        <button class="tab-btn" data-tab="liked-posts">좋아요한 글</button>
+        <button class="tab-btn" data-tab="bookmarks">북마크</button>
+        <button class="tab-btn" data-tab="settings">설정</button>
+    </div>
+
+    <!-- Tab Content: My Posts -->
+    <div class="tab-content active" id="my-posts">
+        <!-- Posts Grid (when posts exist) -->
+        <div th:if="${posts != null and !posts.isEmpty()}" class="posts-grid">
+            <div th:each="post : ${posts}" class="post-card-wrapper">
+                <a th:href="@{'/posts/' + ${post.id}}" class="post-card">
+                    <img
+                            th:if="${post.imageUrl != null and !post.imageUrl.isEmpty()}"
+                            th:src="@{'/files/' + ${post.imageUrl}}"
+                            alt="Post Image"
+                            class="post-image">
+                    <img
+                            th:unless="${post.imageUrl != null and !post.imageUrl.isEmpty()}"
+                            src="data:image/svg+xml,%3Csvg width='400' height='200' xmlns='http://www.w3.org/2000/svg'%3E%3Crect width='400' height='200' fill='%23e8e8e8'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='Arial' font-size='20' fill='%23999'%3E이미지 없음%3C/text%3E%3C/svg%3E"
+                            alt="No Image"
+                            class="post-image">
+                    <div class="post-content">
+                        <h3 class="post-title" th:text="${post.title}">게시글 제목</h3>
+                        <div class="post-meta">
+                            <span class="post-date" th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd')}">2024-11-20</span>
+                        </div>
+                    </div>
+                </a>
+                <div class="post-actions">
+                    <a th:href="@{'/posts/' + ${post.id} + '/edit'}" class="btn-edit">수정</a>
+                    <form th:action="@{'/posts/' + ${post.id} + '/delete'}" method="post" style="display: inline; flex: 1;">
+                        <button type="submit" class="btn-delete" onclick="return confirm('정말 삭제하시겠습니까?')" style="width: 100%;">삭제</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Empty State (when no posts) -->
+        <div th:if="${posts == null or posts.isEmpty()}" class="empty-state">
+            <div class="empty-icon">✈️</div>
+            <h3 class="empty-title">아직 작성한 여행 이야기가 없습니다</h3>
+            <p class="empty-text">첫 여행 이야기를 작성해보세요!</p>
+            <a href="/posts/new" class="btn-empty">글쓰기</a>
+        </div>
+    </div>
+
+    <!-- Tab Content: Liked Posts -->
+    <div class="tab-content" id="liked-posts">
+        <div class="empty-state">
+            <div class="empty-icon">❤️</div>
+            <h3 class="empty-title">좋아요한 글이 없습니다</h3>
+            <p class="empty-text">마음에 드는 여행 이야기를 좋아요해보세요!</p>
+            <a href="/posts" class="btn-empty">글 둘러보기</a>
+        </div>
+    </div>
+
+    <!-- Tab Content: Bookmarks -->
+    <div class="tab-content" id="bookmarks">
+        <div class="empty-state">
+            <div class="empty-icon">🔖</div>
+            <h3 class="empty-title">북마크한 글이 없습니다</h3>
+            <p class="empty-text">마음에 드는 여행 이야기를 북마크해보세요!</p>
+            <a href="/posts" class="btn-empty">글 둘러보기</a>
+        </div>
+    </div>
+
+    <!-- Tab Content: Settings -->
+    <div class="tab-content" id="settings">
+        <div class="settings-section">
+            <!-- Account Settings -->
+            <div class="settings-group">
+                <h3 class="settings-title">계정 설정</h3>
+                <div class="settings-list">
+                    <a href="/user/profile-edit" class="settings-item">
+                        <div class="settings-item-label">
+                            <span class="settings-item-icon">👤</span>
+                            <span>프로필 수정</span>
+                        </div>
+                        <span class="settings-item-arrow">→</span>
+                    </a>
+                    <a th:href="@{/user/change-password}" class="settings-item">
+                        <div class="settings-item-label">
+                            <span class="settings-item-icon">🔑</span>
+                            <span>비밀번호 변경</span>
+                        </div>
+                        <span class="settings-item-arrow">→</span>
+                    </a>
+                    <a href="/user/email-change" class="settings-item">
+                        <div class="settings-item-label">
+                            <span class="settings-item-icon">✉️</span>
+                            <span>이메일 변경</span>
+                        </div>
+                        <span class="settings-item-arrow">→</span>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Notification Settings -->
+            <div class="settings-group">
+                <h3 class="settings-title">알림 설정</h3>
+                <div class="settings-list">
+                    <div class="settings-item">
+                        <div class="settings-item-label">
+                            <span class="settings-item-icon">💬</span>
+                            <span>댓글 알림</span>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="settings-item">
+                        <div class="settings-item-label">
+                            <span class="settings-item-icon">❤️</span>
+                            <span>좋아요 알림</span>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="settings-item">
+                        <div class="settings-item-label">
+                            <span class="settings-item-icon">📢</span>
+                            <span>마케팅 알림</span>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Account Management -->
+            <div class="settings-group">
+                <h3 class="settings-title">계정 관리</h3>
+                <div class="settings-list">
+                    <a href="/auth/logout" class="settings-item">
+                        <div class="settings-item-label">
+                            <span class="settings-item-icon">🚪</span>
+                            <span>로그아웃</span>
+                        </div>
+                        <span class="settings-item-arrow">→</span>
+                    </a>
+                    <a th:href="@{/user/withdraw}" class="settings-item danger">
+                        <div class="settings-item-label">
+                            <span class="settings-item-icon">⚠️</span>
+                            <span>회원 탈퇴</span>
+                        </div>
+                        <span class="settings-item-arrow">→</span>
+                    </a>
+                </div>
+            </div>
         </div>
     </div>
 </main>
 
-<div th:replace="~{fragments/footer :: footerFragment}"></div>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<!-- Follow Modal -->
+<div id="followModal" class="modal-overlay" onclick="closeModalOnOutsideClick(event)">
+    <div class="modal-content" onclick="event.stopPropagation()">
+        <div class="modal-header">
+            <h3 class="modal-title" id="modalTitle">팔로워</h3>
+            <button class="modal-close" onclick="closeFollowModal()">&times;</button>
+        </div>
+        <div class="modal-body" id="modalBody">
+            <!-- User list will be loaded here -->
+        </div>
+    </div>
+</div>
+
+<!-- Footer -->
+<footer>
+    <div class="footer-content">
+        <div>
+            <div class="footer-logo">Travelog</div>
+            <p class="footer-description">
+                특별했던 여행의 순간들을 기록하고 공유하는 공간입니다.<br>
+                당신의 여행 이야기가 누군가에게는 소중한 영감이 될 수 있습니다.
+            </p>
+        </div>
+        <div class="footer-section">
+            <h4>서비스</h4>
+            <ul class="footer-links">
+                <li><a href="/posts">여행 이야기</a></li>
+                <li><a href="/posts/new">글쓰기</a></li>
+                <li><a href="/about">소개</a></li>
+                <li><a href="/faq">자주 묻는 질문</a></li>
+            </ul>
+        </div>
+        <div class="footer-section">
+            <h4>정보</h4>
+            <ul class="footer-links">
+                <li><a href="/terms">이용약관</a></li>
+                <li><a href="/privacy">개인정보처리방침</a></li>
+                <li><a href="/contact">문의하기</a></li>
+            </ul>
+        </div>
+    </div>
+    <div class="footer-bottom">
+        © 2025 Travelog. All rights reserved.
+    </div>
+</footer>
+
+<script th:inline="javascript">
+    // Tab Switching
+    const tabBtns = document.querySelectorAll('.tab-btn');
+    const tabContents = document.querySelectorAll('.tab-content');
+
+    tabBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            // Remove active class from all tabs
+            tabBtns.forEach(b => b.classList.remove('active'));
+            tabContents.forEach(c => c.classList.remove('active'));
+
+            // Add active class to clicked tab
+            btn.classList.add('active');
+            const tabId = btn.getAttribute('data-tab');
+            document.getElementById(tabId).classList.add('active');
+        });
+    });
+
+    // Follow Modal Functions
+    const userId = /*[[${user != null ? user.id : 0}]]*/ 0;
+
+    async function showFollowModal(type) {
+        const modal = document.getElementById('followModal');
+        const modalTitle = document.getElementById('modalTitle');
+        const modalBody = document.getElementById('modalBody');
+
+        // Set title
+        modalTitle.textContent = type === 'followers' ? '팔로워' : '팔로잉';
+
+        // Show loading
+        modalBody.innerHTML = '<div class="empty-list"><div class="empty-list-text">불러오는 중...</div></div>';
+        modal.classList.add('active');
+
+        try {
+            // Fetch data
+            const response = await fetch(`/api/follow/${userId}/${type}`);
+            const users = await response.json();
+
+            // Display users
+            if (users.length === 0) {
+                modalBody.innerHTML = `
+                    <div class="empty-list">
+                        <div class="empty-list-icon">${type === 'followers' ? '👥' : '👤'}</div>
+                        <div class="empty-list-text">${type === 'followers' ? '아직 팔로워가 없습니다' : '아직 팔로우한 사람이 없습니다'}</div>
+                    </div>
+                `;
+            } else {
+                modalBody.innerHTML = users.map(user => `
+                    <div class="user-list-item">
+                        <div class="user-list-avatar">👤</div>
+                        <div class="user-list-info">
+                            <div class="user-list-username">${user.username}</div>
+                        </div>
+                    </div>
+                `).join('');
+            }
+        } catch (error) {
+            console.error('Failed to load users:', error);
+            modalBody.innerHTML = `
+                <div class="empty-list">
+                    <div class="empty-list-text">불러오기 실패</div>
+                </div>
+            `;
+        }
+    }
+
+    function closeFollowModal() {
+        const modal = document.getElementById('followModal');
+        modal.classList.remove('active');
+    }
+
+    function closeModalOnOutsideClick(event) {
+        if (event.target.id === 'followModal') {
+            closeFollowModal();
+        }
+    }
+
+    // Close modal on ESC key
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') {
+            closeFollowModal();
+        }
+    });
+
+</script>
 </body>
 </html>
