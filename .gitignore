@@ -1,0 +1,24 @@
+# IntelliJ 설정 파일
+.idea/
+*.iml
+.idea/misc.xml
+.idea/modules.xml
+.idea/vcs.xml
+
+# VSCode 설정
+.vscode/
+
+# Gradle
+.gradle/
+build/
+bin/
+out/
+
+# 시스템 파일
+.DS_Store
+
+# 로그 파일
+*.log
+
+# Java 컴파일 파일
+*.class
