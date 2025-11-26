@@ -72,6 +72,7 @@ Travelog는 다음 기능을 제공한다.
 
 아래는 실제 리포지토리 구조이다.
 
+```
 likelion_2nd_project_team2/
 ├── .github/
 │   └── workflows/
@@ -105,6 +106,7 @@ likelion_2nd_project_team2/
 ├── .gitignore 
 ├── Dockerfile
 └── README.md
+```
 
 ## 5. 배포 방식
 
