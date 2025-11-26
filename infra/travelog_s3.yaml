@@ -1,0 +1,52 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: S3 bucket for Travelog
+
+Parameters:
+  BucketName:
+    Type: String
+    Description: travelogs3-project2
+  ProjectTag:
+    Type: String
+    Description: travelog
+
+Resources:
+  # 1. 애플리케이션 데이터용 S3 버킷 정의 (Resources 하위에 최소 1개의 리소스가 있어야 합니다.)
+  AppBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      # BucketName은 CloudFormation Parameter에서 입력받은 값을 사용합니다.
+      BucketName: !Ref BucketName
+
+      # ⚠️ 보안 모범 사례: 모든 퍼블릭 접근을 차단합니다.
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+
+      # ⚠️ 데이터 보호: 서버 측 암호화(SSE-S3)를 기본으로 설정합니다.
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256 # S3 관리형 키 (SSE-S3) 사용
+
+      # 데이터 보호: 실수로 인한 삭제를 방지하기 위해 버전 관리를 활성화합니다.
+      VersioningConfiguration:
+        Status: Enabled
+
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectTag
+        - Key: Environment
+          Value: Development
+
+Outputs:
+  BucketNameOutput:
+    Description: 생성된 S3 버킷 이름
+    Value: !Ref AppBucket
+  BucketArn:
+    Description: 생성된 S3 버킷 ARN
+    Value: !GetAtt AppBucket.Arn
+    Export:
+      # 다른 스택에서 참조할 수 있도록 Export 이름을 ProjectTag와 조합하여 지정
+      Name: !Sub "${ProjectTag}-AppBucketArn"

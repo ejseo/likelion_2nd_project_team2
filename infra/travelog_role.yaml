@@ -1,0 +1,116 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: IAM ROLE for ECS Fargate Service
+
+Parameters:
+  DatabaseUserName:
+    Type: String
+    Description: app_user
+    # RDS IAM 인증 시 애플리케이션이 연결할 DB 사용자 이름 (예: app_user)
+
+Resources:
+
+  #####################################################################
+  # 1. Task Execution Role (실행 역할)
+  #####################################################################
+  EcsTaskExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: "travelog-EcsTaskExecutionRole"
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: [ecs-tasks.amazonaws.com]
+            Action: ['sts:AssumeRole']
+      Path: '/'
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
+
+      Policies:
+        - PolicyName: SecretsManagerAccessPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - secretsmanager:GetSecretValue
+                  - kms:Decrypt
+                Resource:
+                  # Secrets Manager ARN 접근 허용
+                  - !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:*"
+                  - !Sub "arn:aws:kms:${AWS::Region}:${AWS::AccountId}:key/*"
+
+      Tags:
+        - Key: Project
+          Value: "travelogs3-project2"
+
+  #####################################################################
+  # 2. Task Role (태스크 역할)
+  #####################################################################
+  EcsTaskRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: "travelog-EcsTaskRole"
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: [ecs-tasks.amazonaws.com]
+            Action: ['sts:AssumeRole']
+      Path: '/'
+      Policies:
+        # S3 버킷 Read/Write 권한 정책
+        - PolicyName: S3AccessPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:PutObject
+                  - s3:DeleteObject
+                  - s3:ListBucket
+                  - s3:GetBucketLocation
+                Resource:
+                  # !!! 고객님이 확인해주신 정확한 Export Name으로 수정됨 !!!
+                  # 1. 버킷 자체에 대한 권한 (버킷 ARN)
+                  - Fn::ImportValue: "travelog-AppBucketArn"
+                  # 2. 버킷 내부의 모든 객체에 대한 권한 (버킷 ARN + /*)
+                  - Fn::Join:
+                      - ""
+                      -
+                        - Fn::ImportValue: "travelog-AppBucketArn"
+                        - "/*"
+
+        # RDS 접근 권한
+        - PolicyName: RdsConnectPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - rds-db:connect
+                Resource:
+                  - !Sub "arn:aws:rds-db:${AWS::Region}:${AWS::AccountId}:dbuser:*/${DatabaseUserName}"
+                Condition:
+                  StringEquals:
+                    "rds-db:externalid": "travelogs3-project2-EcsTaskRole"
+
+      Tags:
+        - Key: Project
+          Value: "travelogs3-project2"
+
+Outputs:
+  TaskExecutionRoleArn:
+    Description: ECS Task Execution Role ARN
+    Value: !GetAtt EcsTaskExecutionRole.Arn
+    Export:
+      Name: "travelogs3-project2-TaskExecutionRoleArn"
+
+  TaskRoleArn:
+    Description: ECS Task Role ARN
+    Value: !GetAtt EcsTaskRole.Arn
+    Export:
+      Name: "travelogs3-project2-TaskRoleArn"

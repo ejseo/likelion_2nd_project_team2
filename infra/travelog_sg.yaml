@@ -1,0 +1,100 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: SG for Travelog (ALB, ECS, RDS)
+
+Parameters:
+  VPCId: # 👈 파라미터 이름: VPCId
+    Type: AWS::EC2::VPC::Id
+    Description: 보안 그룹을 생성할 대상 VPC의 ID
+
+Resources:
+
+  # 1. ALB용 보안 그룹 (SG-ALB)
+  AlbSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: ALB Ingress (80, 443) from Internet
+      VpcId: !Ref VPCId
+      SecurityGroupIngress:
+        # Inbound TCP 80 from Internet
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+        # Inbound TCP 443 from Internet
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+      SecurityGroupEgress:
+        # Outbound ALL to ALL (ECS로 트래픽을 내보내기 위해 필요한 기본 설정)
+        - IpProtocol: "-1"
+          CidrIp: 0.0.0.0/0
+      Tags:
+        - Key: Name
+          Value: SG-ALB
+
+  # 2. ECS 태스크용 보안 그룹 (SG-ECS)
+  EcsSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: ECS Task access from ALB, to RDS and Internet
+      VpcId: !Ref VPCId
+      SecurityGroupIngress:
+        # Inbound TCP 8080 from SG-ALB (Application Load Balancer)
+        - IpProtocol: tcp
+          FromPort: 8080
+          ToPort: 8080
+          SourceSecurityGroupId: !Ref AlbSecurityGroup
+      SecurityGroupEgress:
+        # Outbound TCP 443 to Internet (ECR/S3 access)
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+        # ⚠️ Outbound TCP 3306 to RDS 규칙은 아래의 EcsToRdsEgressRule로 분리됨 ⚠️
+      Tags:
+        - Key: Name
+          Value: SG-ECS
+
+  # 3. RDS 데이터베이스용 보안 그룹 (SG-RDS)
+  RdsSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: RDS access from ECS tasks only
+      VpcId: !Ref VPCId
+      SecurityGroupIngress:
+        # Inbound TCP 3306 from SG-ECS only (이것은 여기에 유지)
+        - IpProtocol: tcp
+          FromPort: 3306
+          ToPort: 3306
+          SourceSecurityGroupId: !Ref EcsSecurityGroup
+      SecurityGroupEgress:
+        # Outbound ALL to ALL (기본값)
+        - IpProtocol: "-1"
+          CidrIp: 0.0.0.0/0
+      Tags:
+        - Key: Name
+          Value: SG-RDS
+
+  # 4. 순환 종속성을 해결하기 위해 ECS -> RDS의 Egress 규칙을 별도로 생성
+  EcsToRdsEgressRule:
+    Type: AWS::EC2::SecurityGroupEgress
+    Properties:
+      # ECS 보안 그룹에 규칙을 적용
+      GroupId: !Ref EcsSecurityGroup
+      IpProtocol: tcp
+      FromPort: 3306
+      ToPort: 3306
+      # 목적지는 RDS 보안 그룹
+      DestinationSecurityGroupId: !Ref RdsSecurityGroup
+
+Outputs:
+  AlbSecurityGroupId:
+    Description: ALB용 보안 그룹 ID
+    Value: !Ref AlbSecurityGroup
+  EcsSecurityGroupId:
+    Description: ECS 태스크용 보안 그룹 ID
+    Value: !Ref EcsSecurityGroup
+  RdsSecurityGroupId:
+    Description: RDS 데이터베이스용 보안 그룹 ID
+    Value: !Ref RdsSecurityGroup
