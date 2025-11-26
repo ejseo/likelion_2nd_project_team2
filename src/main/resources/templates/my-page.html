@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <head>
@@ -74,6 +75,30 @@
             background-color: #267C7D;
             transform: translateY(-1px);
             color: white;
+        }
+
+        .btn-write:hover {
+            background-color: #267C7D;
+            transform: translateY(-1px);
+            color: white;
+        }
+
+        .btn-logout {
+            padding: 8px 20px;
+            background-color: white;
+            color: #666;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            font-size: 15px;
+            font-family: 'Noto Serif KR', serif;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-logout:hover {
+            border-color: #FF6B6B;
+            color: #FF6B6B;
+            background-color: #FFF3F3;
         }
 
         /* Main Content */
@@ -798,6 +823,9 @@
         <div class="profile-avatar">👤</div>
         <div class="profile-info">
             <div class="profile-name" th:text="${#authentication.name}">여행러버</div>
+            <form th:action="@{/auth/logout}" method="post" style="margin: 0;">
+                <button type="submit" class="btn-logout">로그아웃</button>
+            </form>
             <div class="profile-role" th:text="${#authentication.principal.authorities}">ROLE_USER</div>
             <div class="profile-stats">
                 <div class="stat-item">
@@ -821,7 +849,7 @@
         <button class="tab-btn active" data-tab="my-posts">나의 리뷰</button>
         <button class="tab-btn" data-tab="liked-posts">좋아요한 글</button>
         <button class="tab-btn" data-tab="bookmarks">북마크</button>
-        <button class="tab-btn" data-tab="settings">설정</button>
+<!--        <button class="tab-btn" data-tab="settings">설정</button>-->
     </div>
 
     <!-- Tab Content: My Posts -->
@@ -867,7 +895,32 @@
 
     <!-- Tab Content: Liked Posts -->
     <div class="tab-content" id="liked-posts">
-        <div class="empty-state">
+        <!-- Posts Grid (when liked posts exist) -->
+        <div th:if="${likedPosts != null and !likedPosts.isEmpty()}" class="posts-grid">
+            <div th:each="post : ${likedPosts}" class="post-card-wrapper">
+                <a th:href="@{'/posts/' + ${post.id}}" class="post-card">
+                    <img
+                            th:if="${post.imageUrl != null and !post.imageUrl.isEmpty()}"
+                            th:src="@{'/files/' + ${post.imageUrl}}"
+                            alt="Post Image"
+                            class="post-image">
+                    <img
+                            th:unless="${post.imageUrl != null and !post.imageUrl.isEmpty()}"
+                            src="data:image/svg+xml,%3Csvg width='400' height='200' xmlns='http://www.w3.org/2000/svg'%3E%3Crect width='400' height='200' fill='%23e8e8e8'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='Arial' font-size='20' fill='%23999'%3E이미지 없음%3C/text%3E%3C/svg%3E"
+                            alt="No Image"
+                            class="post-image">
+                    <div class="post-content">
+                        <h3 class="post-title" th:text="${post.title}">게시글 제목</h3>
+                        <div class="post-meta">
+                            <span class="post-date" th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd')}">2024-11-20</span>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        </div>
+
+        <!-- Empty State (when no liked posts) -->
+        <div th:if="${likedPosts == null or likedPosts.isEmpty()}" class="empty-state">
             <div class="empty-icon">❤️</div>
             <h3 class="empty-title">좋아요한 글이 없습니다</h3>
             <p class="empty-text">마음에 드는 여행 이야기를 좋아요해보세요!</p>
@@ -877,7 +930,32 @@
 
     <!-- Tab Content: Bookmarks -->
     <div class="tab-content" id="bookmarks">
-        <div class="empty-state">
+        <!-- Posts Grid (when bookmarked posts exist) -->
+        <div th:if="${bookmarkedPosts != null and !bookmarkedPosts.isEmpty()}" class="posts-grid">
+            <div th:each="post : ${bookmarkedPosts}" class="post-card-wrapper">
+                <a th:href="@{'/posts/' + ${post.id}}" class="post-card">
+                    <img
+                            th:if="${post.imageUrl != null and !post.imageUrl.isEmpty()}"
+                            th:src="@{'/files/' + ${post.imageUrl}}"
+                            alt="Post Image"
+                            class="post-image">
+                    <img
+                            th:unless="${post.imageUrl != null and !post.imageUrl.isEmpty()}"
+                            src="data:image/svg+xml,%3Csvg width='400' height='200' xmlns='http://www.w3.org/2000/svg'%3E%3Crect width='400' height='200' fill='%23e8e8e8'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='Arial' font-size='20' fill='%23999'%3E이미지 없음%3C/text%3E%3C/svg%3E"
+                            alt="No Image"
+                            class="post-image">
+                    <div class="post-content">
+                        <h3 class="post-title" th:text="${post.title}">게시글 제목</h3>
+                        <div class="post-meta">
+                            <span class="post-date" th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd')}">2024-11-20</span>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        </div>
+
+        <!-- Empty State (when no bookmarked posts) -->
+        <div th:if="${bookmarkedPosts == null or bookmarkedPosts.isEmpty()}" class="empty-state">
             <div class="empty-icon">🔖</div>
             <h3 class="empty-title">북마크한 글이 없습니다</h3>
             <p class="empty-text">마음에 드는 여행 이야기를 북마크해보세요!</p>
@@ -885,96 +963,96 @@
         </div>
     </div>
 
-    <!-- Tab Content: Settings -->
-    <div class="tab-content" id="settings">
-        <div class="settings-section">
-            <!-- Account Settings -->
-            <div class="settings-group">
-                <h3 class="settings-title">계정 설정</h3>
-                <div class="settings-list">
-                    <a href="/user/profile-edit" class="settings-item">
-                        <div class="settings-item-label">
-                            <span class="settings-item-icon">👤</span>
-                            <span>프로필 수정</span>
-                        </div>
-                        <span class="settings-item-arrow">→</span>
-                    </a>
-                    <a th:href="@{/user/change-password}" class="settings-item">
-                        <div class="settings-item-label">
-                            <span class="settings-item-icon">🔑</span>
-                            <span>비밀번호 변경</span>
-                        </div>
-                        <span class="settings-item-arrow">→</span>
-                    </a>
-                    <a href="/user/email-change" class="settings-item">
-                        <div class="settings-item-label">
-                            <span class="settings-item-icon">✉️</span>
-                            <span>이메일 변경</span>
-                        </div>
-                        <span class="settings-item-arrow">→</span>
-                    </a>
-                </div>
-            </div>
+<!--    &lt;!&ndash; Tab Content: Settings &ndash;&gt;-->
+<!--    <div class="tab-content" id="settings">-->
+<!--        <div class="settings-section">-->
+<!--            &lt;!&ndash; Account Settings &ndash;&gt;-->
+<!--            <div class="settings-group">-->
+<!--                <h3 class="settings-title">계정 설정</h3>-->
+<!--                <div class="settings-list">-->
+<!--                    <a href="/user/profile-edit" class="settings-item">-->
+<!--                        <div class="settings-item-label">-->
+<!--                            <span class="settings-item-icon">👤</span>-->
+<!--                            <span>프로필 수정</span>-->
+<!--                        </div>-->
+<!--                        <span class="settings-item-arrow">→</span>-->
+<!--                    </a>-->
+<!--                    <a th:href="@{/user/change-password}" class="settings-item">-->
+<!--                        <div class="settings-item-label">-->
+<!--                            <span class="settings-item-icon">🔑</span>-->
+<!--                            <span>비밀번호 변경</span>-->
+<!--                        </div>-->
+<!--                        <span class="settings-item-arrow">→</span>-->
+<!--                    </a>-->
+<!--                    <a href="/user/email-change" class="settings-item">-->
+<!--                        <div class="settings-item-label">-->
+<!--                            <span class="settings-item-icon">✉️</span>-->
+<!--                            <span>이메일 변경</span>-->
+<!--                        </div>-->
+<!--                        <span class="settings-item-arrow">→</span>-->
+<!--                    </a>-->
+<!--                </div>-->
+<!--            </div>-->
 
-            <!-- Notification Settings -->
-            <div class="settings-group">
-                <h3 class="settings-title">알림 설정</h3>
-                <div class="settings-list">
-                    <div class="settings-item">
-                        <div class="settings-item-label">
-                            <span class="settings-item-icon">💬</span>
-                            <span>댓글 알림</span>
-                        </div>
-                        <label class="toggle-switch">
-                            <input type="checkbox" checked>
-                            <span class="toggle-slider"></span>
-                        </label>
-                    </div>
-                    <div class="settings-item">
-                        <div class="settings-item-label">
-                            <span class="settings-item-icon">❤️</span>
-                            <span>좋아요 알림</span>
-                        </div>
-                        <label class="toggle-switch">
-                            <input type="checkbox" checked>
-                            <span class="toggle-slider"></span>
-                        </label>
-                    </div>
-                    <div class="settings-item">
-                        <div class="settings-item-label">
-                            <span class="settings-item-icon">📢</span>
-                            <span>마케팅 알림</span>
-                        </div>
-                        <label class="toggle-switch">
-                            <input type="checkbox">
-                            <span class="toggle-slider"></span>
-                        </label>
-                    </div>
-                </div>
-            </div>
+<!--            &lt;!&ndash; Notification Settings &ndash;&gt;-->
+<!--            <div class="settings-group">-->
+<!--                <h3 class="settings-title">알림 설정</h3>-->
+<!--                <div class="settings-list">-->
+<!--                    <div class="settings-item">-->
+<!--                        <div class="settings-item-label">-->
+<!--                            <span class="settings-item-icon">💬</span>-->
+<!--                            <span>댓글 알림</span>-->
+<!--                        </div>-->
+<!--                        <label class="toggle-switch">-->
+<!--                            <input type="checkbox" checked>-->
+<!--                            <span class="toggle-slider"></span>-->
+<!--                        </label>-->
+<!--                    </div>-->
+<!--                    <div class="settings-item">-->
+<!--                        <div class="settings-item-label">-->
+<!--                            <span class="settings-item-icon">❤️</span>-->
+<!--                            <span>좋아요 알림</span>-->
+<!--                        </div>-->
+<!--                        <label class="toggle-switch">-->
+<!--                            <input type="checkbox" checked>-->
+<!--                            <span class="toggle-slider"></span>-->
+<!--                        </label>-->
+<!--                    </div>-->
+<!--                    <div class="settings-item">-->
+<!--                        <div class="settings-item-label">-->
+<!--                            <span class="settings-item-icon">📢</span>-->
+<!--                            <span>마케팅 알림</span>-->
+<!--                        </div>-->
+<!--                        <label class="toggle-switch">-->
+<!--                            <input type="checkbox">-->
+<!--                            <span class="toggle-slider"></span>-->
+<!--                        </label>-->
+<!--                    </div>-->
+<!--                </div>-->
+<!--            </div>-->
 
-            <!-- Account Management -->
-            <div class="settings-group">
-                <h3 class="settings-title">계정 관리</h3>
-                <div class="settings-list">
-                    <a href="/auth/logout" class="settings-item">
-                        <div class="settings-item-label">
-                            <span class="settings-item-icon">🚪</span>
-                            <span>로그아웃</span>
-                        </div>
-                        <span class="settings-item-arrow">→</span>
-                    </a>
-                    <a th:href="@{/user/withdraw}" class="settings-item danger">
-                        <div class="settings-item-label">
-                            <span class="settings-item-icon">⚠️</span>
-                            <span>회원 탈퇴</span>
-                        </div>
-                        <span class="settings-item-arrow">→</span>
-                    </a>
-                </div>
-            </div>
-        </div>
-    </div>
+<!--            &lt;!&ndash; Account Management &ndash;&gt;-->
+<!--            <div class="settings-group">-->
+<!--                <h3 class="settings-title">계정 관리</h3>-->
+<!--                <div class="settings-list">-->
+<!--                    <a href="/auth/logout" class="settings-item">-->
+<!--                        <div class="settings-item-label">-->
+<!--                            <span class="settings-item-icon">🚪</span>-->
+<!--                            <span>로그아웃</span>-->
+<!--                        </div>-->
+<!--                        <span class="settings-item-arrow">→</span>-->
+<!--                    </a>-->
+<!--                    <a th:href="@{/user/withdraw}" class="settings-item danger">-->
+<!--                        <div class="settings-item-label">-->
+<!--                            <span class="settings-item-icon">⚠️</span>-->
+<!--                            <span>회원 탈퇴</span>-->
+<!--                        </div>-->
+<!--                        <span class="settings-item-arrow">→</span>-->
+<!--                    </a>-->
+<!--                </div>-->
+<!--            </div>-->
+<!--        </div>-->
+<!--    </div>-->
 </main>
 
 <!-- Follow Modal -->

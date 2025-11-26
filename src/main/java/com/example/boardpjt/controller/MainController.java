@@ -1,7 +1,11 @@
 package com.example.boardpjt.controller;
 
+import com.example.boardpjt.model.entity.Bookmark;
 import com.example.boardpjt.model.entity.Post;
+import com.example.boardpjt.model.entity.PostLike;
 import com.example.boardpjt.model.entity.UserAccount;
+import com.example.boardpjt.model.repository.BookmarkRepository;
+import com.example.boardpjt.model.repository.PostLikeRepository;
 import com.example.boardpjt.model.repository.UserAccountRepository;
 import com.example.boardpjt.service.PostService;
 import lombok.RequiredArgsConstructor;
@@ -11,6 +15,9 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * 메인 페이지 및 사용자 페이지를 담당하는 컨트롤러
@@ -22,6 +29,8 @@ public class MainController {
 
     private final PostService postService;
     private final UserAccountRepository userAccountRepository;
+    private final PostLikeRepository postLikeRepository;
+    private final BookmarkRepository bookmarkRepository;
 
     /**
      * 애플리케이션의 홈페이지(메인 페이지)를 보여주는 메서드
@@ -85,6 +94,20 @@ public class MainController {
                 model.addAttribute("currentPage", page);
                 model.addAttribute("totalPages", userPosts.getTotalPages());
                 model.addAttribute("totalPosts", userPosts.getTotalElements());
+
+                // 좋아요한 글 조회
+                List<PostLike> likedPosts = postLikeRepository.findByUserAccount(user);
+                List<Post> likedPostsList = likedPosts.stream()
+                        .map(PostLike::getPost)
+                        .collect(Collectors.toList());
+                model.addAttribute("likedPosts", likedPostsList);
+
+                // 북마크한 글 조회
+                List<Bookmark> bookmarks = bookmarkRepository.findByUserAccount(user);
+                List<Post> bookmarkedPosts = bookmarks.stream()
+                        .map(Bookmark::getPost)
+                        .collect(Collectors.toList());
+                model.addAttribute("bookmarkedPosts", bookmarkedPosts);
             }
         }
 

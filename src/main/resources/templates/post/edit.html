@@ -741,8 +741,14 @@
 <script th:inline="javascript">
     // Initialize with existing data
     const existingRating = /*[[${post.rating}]]*/ 0;
-    const existingTags = /*[[${post.tags}]]*/ '';
+    const existingTags = /*[[${post.tags}]]*/ [];
+    const existingCategory = /*[[${post.category}]]*/ '';
     const existingImageUrl = /*[[${post.imageUrl}]]*/ '';
+
+    // Set initial category
+    if (existingCategory) {
+        document.getElementById('category').value = existingCategory;
+    }
 
     // Rating Selector
     const ratingStars = document.querySelectorAll('.rating-star');
@@ -805,8 +811,8 @@
     let tags = [];
 
     // Initialize tags
-    if (existingTags) {
-        tags = existingTags.split(',').map(tag => tag.trim()).filter(tag => tag);
+    if (existingTags && existingTags.length > 0) {
+        tags = Array.isArray(existingTags) ? existingTags : existingTags.split(',').map(tag => tag.trim()).filter(tag => tag);
         renderTags();
         updateTagsData();
     }

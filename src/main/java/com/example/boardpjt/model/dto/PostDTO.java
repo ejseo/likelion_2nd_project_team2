@@ -1,10 +1,14 @@
 package com.example.boardpjt.model.dto;
 
+import com.example.boardpjt.model.entity.Post;
+import com.example.boardpjt.model.entity.PostTag;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class PostDTO {
 
@@ -17,18 +21,12 @@ public class PostDTO {
         @NotBlank(message = "내용은 필수 입력 항목입니다.")
         private String content;
 
-        private String username;
-
-        // 이미지 URL 필드
         private String imageUrl;
-
-        // [추가] 카테고리, 평점, 태그 필드
         private String category;
         private Integer rating;
-        private String tags;
+        private List<String> tags;
     }
 
-    // [수정] Response record에 category, rating, tags 추가
     public record Response(
             Long id,
             String title,
@@ -38,6 +36,24 @@ public class PostDTO {
             String imageUrl,
             String category,
             Integer rating,
-            String tags
-    ) {}
+            long likeCount,
+            List<String> tags
+    ) {
+        public static Response from(Post post, long likeCount) {
+            return new Response(
+                    post.getId(),
+                    post.getTitle(),
+                    post.getContent(),
+                    post.getAuthor().getUsername(),
+                    post.getCreatedAt(),
+                    post.getImageUrl(),
+                    post.getCategory(),
+                    post.getRating(),
+                    likeCount,
+                    post.getPostTags().stream()
+                            .map(PostTag::getTagName)
+                            .collect(Collectors.toList())
+            );
+        }
+    }
 }

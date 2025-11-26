@@ -4,74 +4,63 @@ import com.example.boardpjt.model.entity.Post;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
-/**
- * Post 엔티티에 대한 데이터 접근 계층(Repository) 인터페이스
- * Spring Data JPA를 사용하여 게시물 관련 데이터베이스 작업을 처리
- * JpaRepository를 상속받아 기본적인 CRUD 메서드들을 자동으로 제공받음
- *
- * 제공되는 기본 메서드들:
- * - save(Post entity): 게시물 저장/수정
- * - findById(Long id): ID로 게시물 조회
- * - findAll(): 모든 게시물 조회
- * - deleteById(Long id): ID로 게시물 삭제
- * - count(): 전체 게시물 수 조회
- * - existsById(Long id): 게시물 존재 여부 확인
- */
+import java.util.List;
+import java.util.Optional;
+
 public interface PostRepository extends JpaRepository<Post, Long> {
-    // JpaRepository<엔티티 클래스, Primary Key 타입>
-    // - Post: 관리할 엔티티 클래스
-    // - Long: Primary Key(id 필드)의 데이터 타입
 
-    // find
-    // By -> Id
-    // Title -> Containing / SQL like -> %키워드%
-    // or Content -> Containing
     Page<Post> findByTitleContainingOrContentContaining(
             String title, String content, Pageable pageable);
 
-    // 최신순으로
     Page<Post> findByTitleContainingOrContentContainingOrderByIdDesc(
             String title, String content, Pageable pageable);
-    // Desc -> PK (Long id)
 
-    // 사용자별 게시글 조회
     Page<Post> findByAuthor_UsernameOrderByIdDesc(String username, Pageable pageable);
 
-    // 카테고리로 필터링 (검색어 포함)
+    Page<Post> findByAuthor_UsernameContaining(String username, Pageable pageable);
+
+    Page<Post> findByAuthor_UsernameContainingOrderByIdDesc(String username, Pageable pageable);
+
+    Page<Post> findByCategoryAndTitleContainingOrCategoryAndContentContaining(
+            String category1, String title, String category2, String content, Pageable pageable);
+
     Page<Post> findByCategoryAndTitleContainingOrCategoryAndContentContainingOrderByIdDesc(
             String category1, String title, String category2, String content, Pageable pageable);
 
-    // 카테고리로만 필터링
+    Page<Post> findByCategory(String category, Pageable pageable);
+
     Page<Post> findByCategoryOrderByIdDesc(String category, Pageable pageable);
+
+    Page<Post> findByCategoryAndAuthor_UsernameContaining(String category, String username, Pageable pageable);
+
+    Page<Post> findByCategoryAndAuthor_UsernameContainingOrderByIdDesc(String category, String username, Pageable pageable);
+
+    Page<Post> findByIdIn(List<Long> ids, Pageable pageable);
+
+    // 인기순 정렬 (좋아요 수)
+    @Query("SELECT p FROM Post p LEFT JOIN p.likes pl GROUP BY p ORDER BY COUNT(pl) DESC, p.id DESC")
+    Page<Post> findAllOrderByLikeCount(Pageable pageable);
+
+    @Query("SELECT p FROM Post p LEFT JOIN p.likes pl WHERE p.author.username LIKE %:username% GROUP BY p ORDER BY COUNT(pl) DESC, p.id DESC")
+    Page<Post> findByAuthor_UsernameContainingOrderByLikeCount(@Param("username") String username, Pageable pageable);
+
+    @Query("SELECT p FROM Post p LEFT JOIN p.likes pl WHERE p.title LIKE %:keyword% OR p.content LIKE %:keyword% GROUP BY p ORDER BY COUNT(pl) DESC, p.id DESC")
+    Page<Post> findByTitleContainingOrContentContainingOrderByLikeCount(@Param("keyword") String keyword1, @Param("keyword") String keyword2, Pageable pageable);
+
+    @Query("SELECT p FROM Post p LEFT JOIN p.likes pl WHERE p.category = :category GROUP BY p ORDER BY COUNT(pl) DESC, p.id DESC")
+    Page<Post> findByCategoryOrderByLikeCount(@Param("category") String category, Pageable pageable);
+
+    @Query("SELECT p FROM Post p LEFT JOIN p.likes pl WHERE p.category = :category AND p.author.username LIKE %:username% GROUP BY p ORDER BY COUNT(pl) DESC, p.id DESC")
+    Page<Post> findByCategoryAndAuthor_UsernameContainingOrderByLikeCount(@Param("category") String category, @Param("username") String username, Pageable pageable);
+
+    @Query("SELECT p FROM Post p LEFT JOIN p.likes pl WHERE p.category = :category AND (p.title LIKE %:keyword% OR p.content LIKE %:keyword%) GROUP BY p ORDER BY COUNT(pl) DESC, p.id DESC")
+    Page<Post> findByCategoryAndTitleContainingOrCategoryAndContentContainingOrderByLikeCount(
+            @Param("category") String category1, @Param("keyword") String keyword1,
+            @Param("category") String category2, @Param("keyword") String keyword2, Pageable pageable);
+
+    @Query("SELECT p FROM Post p LEFT JOIN FETCH p.postTags LEFT JOIN FETCH p.author WHERE p.id = :id")
+    Optional<Post> findByIdWithTags(@Param("id") Long id);
 }
-
-// === Repository 확장 시 고려사항 ===
-
-/**
- * 1. 메서드명 패턴:
- * - findBy: 조회 (SELECT)
- * - countBy: 개수 (COUNT)
- * - deleteBy: 삭제 (DELETE)
- * - existsBy: 존재 여부 (EXISTS)
- *
- * 2. 조건 연산자:
- * - And: findByTitleAndContent
- * - Or: findByTitleOrContent
- * - Like/Containing: findByTitleContaining
- * - IgnoreCase: 대소문자 구분 없음
- * - OrderBy: 정렬 (Asc/Desc)
- * - Between: 범위 조건
- * - GreaterThan/LessThan: 크기 비교
- *
- * 3. 성능 고려사항:
- * - Like 검색 시 인덱스 활용도 고려
- * - 페이징 사용으로 대용량 데이터 처리
- * - fetch join으로 N+1 문제 해결
- * - Projection으로 필요한 데이터만 조회
- *
- * 4. 보안 고려사항:
- * - SQL Injection 방지 (JPA가 기본 제공)
- * - 권한 기반 데이터 접근 제어
- * - 민감한 정보 노출 방지
- */

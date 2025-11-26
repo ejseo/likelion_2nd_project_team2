@@ -106,7 +106,7 @@
 
         /* Search Bar */
         .search-wrapper {
-            max-width: 600px;
+            max-width: 700px;
             margin: 0 auto;
         }
 
@@ -114,6 +114,24 @@
             position: relative;
             display: flex;
             gap: 8px;
+        }
+
+        .search-type-select {
+            padding: 14px 16px;
+            border: 1px solid #ddd;
+            border-radius: 50px;
+            font-size: 14px;
+            font-family: 'Noto Serif KR', serif;
+            outline: none;
+            background-color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-width: 130px;
+        }
+
+        .search-type-select:focus {
+            border-color: #2D9596;
+            box-shadow: 0 4px 20px rgba(45, 149, 150, 0.15);
         }
 
         .search-input {
@@ -628,6 +646,10 @@
 
     <div class="search-wrapper">
         <form th:action="@{/posts}" method="get" class="search-form">
+            <select name="searchType" class="search-type-select">
+                <option value="titleContent" th:selected="${searchType == 'titleContent'}">제목+내용</option>
+                <option value="author" th:selected="${searchType == 'author'}">작성자</option>
+            </select>
             <input
                     type="text"
                     name="keyword"
@@ -667,9 +689,9 @@
         </div>
 
         <div class="sort-options">
-            <button class="sort-btn active" onclick="sortPosts('latest')">최신순</button>
-            <button class="sort-btn" onclick="sortPosts('popular')">인기순</button>
-            <button class="sort-btn" onclick="sortPosts('rating')">평점순</button>
+            <button class="sort-btn" th:classappend="${sort == 'latest' or sort == null or sort.isEmpty()} ? 'active'" onclick="sortPosts('latest')">최신순</button>
+            <button class="sort-btn" th:classappend="${sort == 'popular'} ? 'active'" onclick="sortPosts('popular')">인기순</button>
+            <button class="sort-btn" th:classappend="${sort == 'rating'} ? 'active'" onclick="sortPosts('rating')">평점순</button>
         </div>
     </div>
 
@@ -746,21 +768,21 @@
 
     <!-- Pagination -->
     <div th:unless="${posts.isEmpty()}" class="pagination">
-        <a th:href="@{/posts(page=${currentPage - 1}, keyword=${keyword}, category=${selectedCategory})}"
+        <a th:href="@{/posts(page=${currentPage - 1}, keyword=${keyword}, category=${selectedCategory}, searchType=${searchType}, sort=${sort})}"
            class="page-btn"
            th:classappend="${currentPage == 1} ? 'disabled'">
             ← 이전
         </a>
 
         <a th:each="i : ${#numbers.sequence(1, totalPages)}"
-           th:href="@{/posts(page=${i}, keyword=${keyword}, category=${selectedCategory})}"
+           th:href="@{/posts(page=${i}, keyword=${keyword}, category=${selectedCategory}, searchType=${searchType}, sort=${sort})}"
            class="page-btn"
            th:classappend="${i == currentPage} ? 'active'"
            th:text="${i}">
             1
         </a>
 
-        <a th:href="@{/posts(page=${currentPage + 1}, keyword=${keyword}, category=${selectedCategory})}"
+        <a th:href="@{/posts(page=${currentPage + 1}, keyword=${keyword}, category=${selectedCategory}, searchType=${searchType}, sort=${sort})}"
            class="page-btn"
            th:classappend="${currentPage == totalPages} ? 'disabled'">
             다음 →

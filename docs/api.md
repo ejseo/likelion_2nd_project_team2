@@ -93,6 +93,8 @@
     "content": "이것은 첫 번째 게시글의 내용입니다.",
     "author": "user123",
     "createdAt": "2023-10-27T10:00:00Z",
+    "likeCount": 15,
+    "tags": ["java", "spring"],
     "comments": [
       {
         "commentId": 101,
@@ -116,7 +118,8 @@
   ```json
   {
     "title": "새로운 게시글 제목",
-    "content": "새로운 게시글 내용입니다."
+    "content": "새로운 게시글 내용입니다.",
+    "tags": ["java", "spring", "api"]
   }
   ```
 - **Response (Success: 201 Created)**:
@@ -126,7 +129,8 @@
     "title": "새로운 게시글 제목",
     "content": "새로운 게시글 내용입니다.",
     "author": "currentUser",
-    "createdAt": "2023-10-27T12:00:00Z"
+    "createdAt": "2023-10-27T12:00:00Z",
+    "tags": ["java", "spring", "api"]
   }
   ```
 
@@ -140,7 +144,8 @@
   ```json
   {
     "title": "수정된 게시글 제목",
-    "content": "수정된 게시글 내용입니다."
+    "content": "수정된 게시글 내용입니다.",
+    "tags": ["java", "spring-boot"]
   }
   ```
 - **Response (Success: 200 OK)**:
@@ -168,6 +173,13 @@
 - **Response (Error)**:
   - `403 Forbidden`: 삭제 권한이 없을 경우
   - `404 Not Found`: 해당 ID의 게시글이 없을 경우
+
+### 3.6. 태그로 게시글 검색
+
+- **Method**: `GET`
+- **URL**: `/api/posts/search?tag={tagName}`
+- **설명**: 특정 태그를 포함하는 모든 게시글 목록을 조회합니다.
+- **Response (Success: 200 OK)**: (게시글 전체 조회와 동일한 형식)
 
 ---
 
@@ -232,3 +244,50 @@
 - **Response (Error)**:
   - `403 Forbidden`: 삭제 권한이 없을 경우
   - `404 Not Found`: 해당 댓글이 없을 경우
+
+---
+
+## 5. Post Like API
+
+### 5.1. 게시글 좋아요 / 좋아요 취소
+
+- **Method**: `POST`
+- **URL**: `/api/posts/{postId}/like`
+- **인증**: 필요 (Bearer Token)
+- **설명**: 특정 게시글에 '좋아요'를 추가하거나 취소합니다. (토글 방식)
+- **Response (Success: 200 OK)**:
+  ```json
+  {
+    "message": "게시글 좋아요를 처리했습니다.",
+    "likeCount": 15
+  }
+  ```
+- **Response (Error)**:
+  - `404 Not Found`: 해당 ID의 게시글이 없을 경우
+
+---
+
+## 6. Bookmark API
+
+### 6.1. 북마크 추가 / 취소
+
+- **Method**: `POST`
+- **URL**: `/api/posts/{postId}/bookmark`
+- **인증**: 필요 (Bearer Token)
+- **설명**: 특정 게시글을 자신의 북마크에 추가하거나 삭제합니다. (토글 방식)
+- **Response (Success: 200 OK)**:
+  ```json
+  {
+    "message": "북마크를 처리했습니다."
+  }
+  ```
+- **Response (Error)**:
+  - `404 Not Found`: 해당 ID의 게시글이 없을 경우
+
+### 6.2. 내 북마크 목록 조회
+
+- **Method**: `GET`
+- **URL**: `/api/bookmarks`
+- **인증**: 필요 (Bearer Token)
+- **설명**: 현재 사용자가 북마크한 모든 게시글 목록을 조회합니다.
+- **Response (Success: 200 OK)**: (게시글 전체 조회와 동일한 형식)
