@@ -1,0 +1,95 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Create Public / Private Subnets
+
+Parameters:
+  VpcId:
+    Type: String
+
+Resources:
+  PublicSubnetA:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VpcId
+      CidrBlock: 10.0.1.0/24
+      AvailabilityZone: ap-northeast-2a
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: travelog-public-a
+        - Key: Tier
+          Value: public
+
+  PublicSubnetC:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VpcId
+      CidrBlock: 10.0.2.0/24
+      AvailabilityZone: ap-northeast-2c
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: travelog-public-c
+        - Key: Tier
+          Value: public
+
+  PrivateAppSubnetA:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VpcId
+      CidrBlock: 10.0.11.0/24
+      AvailabilityZone: ap-northeast-2a
+      Tags:
+        - Key: Name
+          Value: travelog-private-app-a
+        - Key: Tier
+          Value: private-app
+
+  PrivateAppSubnetC:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VpcId
+      CidrBlock: 10.0.12.0/24
+      AvailabilityZone: ap-northeast-2c
+      Tags:
+        - Key: Name
+          Value: travelog-private-app-c
+        - Key: Tier
+          Value: private-app
+
+  PrivateDbSubnetA:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VpcId
+      CidrBlock: 10.0.21.0/24
+      AvailabilityZone: ap-northeast-2a
+      Tags:
+        - Key: Name
+          Value: travelog-private-db-a
+        - Key: Tier
+          Value: private-db
+
+  PrivateDbSubnetC:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VpcId
+      CidrBlock: 10.0.22.0/24
+      AvailabilityZone: ap-northeast-2c
+      Tags:
+        - Key: Name
+          Value: travelog-private-db-c
+        - Key: Tier
+          Value: private-db
+
+Outputs:
+  PublicSubnetAId:
+    Value: !Ref PublicSubnetA
+  PublicSubnetCId:
+    Value: !Ref PublicSubnetC
+  PrivateAppSubnetAId:
+    Value: !Ref PrivateAppSubnetA
+  PrivateAppSubnetCId:
+    Value: !Ref PrivateAppSubnetC
+  PrivateDbSubnetAId:
+    Value: !Ref PrivateDbSubnetA
+  PrivateDbSubnetCId:
+    Value: !Ref PrivateDbSubnetC

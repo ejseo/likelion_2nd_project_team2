@@ -1,0 +1,43 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Create NAT Gateways (A,C)
+
+Parameters:
+  PublicSubnetAId:
+    Type: String
+  PublicSubnetCId:
+    Type: String
+
+Resources:
+  NatEipA:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
+
+  NatGatewayA:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId: !GetAtt NatEipA.AllocationId
+      SubnetId: !Ref PublicSubnetAId
+      Tags:
+        - Key: Name
+          Value: travelog-nat-a
+
+  NatEipC:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
+
+  NatGatewayC:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId: !GetAtt NatEipC.AllocationId
+      SubnetId: !Ref PublicSubnetCId
+      Tags:
+        - Key: Name
+          Value: travelog-nat-c
+
+Outputs:
+  NatGatewayAId:
+    Value: !Ref NatGatewayA
+  NatGatewayCId:
+    Value: !Ref NatGatewayC

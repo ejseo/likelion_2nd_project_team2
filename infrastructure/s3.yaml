@@ -1,0 +1,19 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Travelog S3 Bucket
+
+Resources:
+  TravelogAppBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: travelog-app-images
+      VersioningConfiguration:
+        Status: Enabled
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+
+Outputs:
+  AppBucketName:
+    Value: !Ref TravelogAppBucket

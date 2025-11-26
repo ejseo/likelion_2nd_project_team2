@@ -1,0 +1,88 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Route Tables (Public / Private-App / Private-DB)
+
+Parameters:
+  VpcId:
+    Type: String
+  InternetGatewayId:
+    Type: String
+  NatGatewayId:
+    Type: String
+  PublicSubnetAId:
+    Type: String
+  PublicSubnetCId:
+    Type: String
+  PrivateAppSubnetAId:
+    Type: String
+  PrivateAppSubnetCId:
+    Type: String
+  PrivateDbSubnetAId:
+    Type: String
+  PrivateDbSubnetCId:
+    Type: String
+
+Resources:
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VpcId
+
+  PublicDefaultRoute:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGatewayId
+
+  PublicAssocA:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnetAId
+      RouteTableId: !Ref PublicRouteTable
+
+  PublicAssocC:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnetCId
+      RouteTableId: !Ref PublicRouteTable
+
+  PrivateAppRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VpcId
+
+  PrivateAppDefaultRoute:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PrivateAppRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref NatGatewayId
+
+  PrivateAppAssocA:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PrivateAppSubnetAId
+      RouteTableId: !Ref PrivateAppRouteTable
+
+  PrivateAppAssocC:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PrivateAppSubnetCId
+      RouteTableId: !Ref PrivateAppRouteTable
+
+  PrivateDbRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VpcId
+
+  PrivateDbAssocA:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PrivateDbSubnetAId
+      RouteTableId: !Ref PrivateDbRouteTable
+
+  PrivateDbAssocC:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PrivateDbSubnetCId
+      RouteTableId: !Ref PrivateDbRouteTable

@@ -1,0 +1,18 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: VPC for Travelog
+
+Resources:
+  TravelogVPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+        - Key: Name
+          Value: travelog-vpc
+
+Outputs:
+  VpcId:
+    Description: VPC ID for Travelog
+    Value: !Ref TravelogVPC
