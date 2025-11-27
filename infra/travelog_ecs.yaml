@@ -1,0 +1,231 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: ECS Fargate Service, ALB, Task Definition Stack
+
+Parameters:
+  # -----------------------------------------------------------
+  # 필수 AWS 리소스 Import
+  # -----------------------------------------------------------
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+    Description: travelog-VpcId
+  PublicSubnetAId:
+    Type: AWS::EC2::Subnet::Id
+    Description: travelog-PublicSubnetAId (for ALB)
+  PublicSubnetCId:
+    Type: AWS::EC2::Subnet::Id
+    Description: travelog-PublicSubnetCId (for ALB)
+  PrivateAppSubnetAId:
+    Type: AWS::EC2::Subnet::Id
+    Description: travelog-PrivateAppSubnetAId (for ECS Task)
+  PrivateAppSubnetCId:
+    Type: AWS::EC2::Subnet::Id
+    Description: travelog-PrivateAppSubnetCId (for ECS Task)
+  AlbSecurityGroupId:
+    Type: AWS::EC2::SecurityGroup::Id
+    Description: SG-ALB
+  EcsSecurityGroupId:
+    Type: AWS::EC2::SecurityGroup::Id
+    Description: SG-ECS
+  TaskExecutionRoleArn:
+    Type: String
+    Description: TaskExecutionRole ARN (IAM ROLE)
+
+  # -----------------------------------------------------------
+  # 애플리케이션 관련 설정
+  # -----------------------------------------------------------
+  ECRRepositoryUri:
+    Type: String
+    Default: 727646470302.dkr.ecr.ap-northeast-2.amazonaws.com/travelog-app
+    Description: 'ECR URI (ex: 123456789012.dkr.ecr.region.amazonaws.com/repo-name)'
+  AppImageTag:
+    Type: String
+    Default: v1
+    Description: docker image tag
+  ContainerPort:
+    Type: Number
+    Default: 8080
+    Description: listening conatainer port
+
+  # -----------------------------------------------------------
+  # 데이터베이스 환경 변수 (RDS Stack의 Output/Info를 참조하여 입력)
+  # -----------------------------------------------------------
+  DbHost:
+    Type: String
+    Description: RDS endpoint host
+  DbPort:
+    Type: Number
+    Default: 3306
+    Description: RDS port
+  DbName:
+    Type: String
+    Default: travelog
+    Description: RDS database name
+  DbUser:
+    Type: String
+    Default: admin
+    Description: RDS database user name
+  DbPassword:
+    Type: String
+    Description: RDS database password
+    NoEcho: true
+  SpringProfilesActive:
+    Type: String
+    Default: prod
+    Description: Spring Boot Active Profile
+
+Resources:
+
+  # =========================================================================
+  # 1. ECS 클러스터
+  # =========================================================================
+  EcsCluster:
+    Type: AWS::ECS::Cluster
+    Properties:
+      ClusterName: travelog-cluster
+
+  # =========================================================================
+  # 2. Application Load Balancer (ALB)
+  # =========================================================================
+  TravelogALB:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name: travelog-alb
+      Scheme: internet-facing
+      Subnets:
+        - !Ref PublicSubnetAId
+        - !Ref PublicSubnetCId
+      SecurityGroups:
+        - !Ref AlbSecurityGroupId
+      Tags:
+        - Key: Name
+          Value: travelog-ALB
+
+  # 3. Target Group (ECS Tasks를 대상으로 함)
+  TravelogTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: travelog-tg
+      VpcId: !Ref VpcId
+      Port: !Ref ContainerPort
+      Protocol: HTTP
+      TargetType: ip
+      HealthCheckPath: / # 헬스체크 경로
+      HealthCheckPort: traffic-port
+      HealthCheckProtocol: HTTP
+      HealthCheckIntervalSeconds: 30
+      HealthCheckTimeoutSeconds: 5
+      HealthyThresholdCount: 2
+      UnhealthyThresholdCount: 2
+      Matcher:
+        HttpCode: '200'
+      Tags:
+        - Key: Name
+          Value: travelog-TG
+
+  # 4. ALB Listener (80 포트)
+  TravelogListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref TravelogALB
+      Port: 80
+      Protocol: HTTP
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref TravelogTargetGroup
+
+  # =========================================================================
+  # 5. ECS Task Definition (Fargate)
+  # =========================================================================
+  TravelogTaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Family: travelog-task-def
+      RequiresCompatibilities:
+        - FARGATE
+      Cpu: '1024' # 1vCPU
+      Memory: '2048' # 2GB
+      NetworkMode: awsvpc
+      ExecutionRoleArn: !Ref TaskExecutionRoleArn # 이미지 풀 및 로그 전송 권한
+      TaskRoleArn: !Ref TaskExecutionRoleArn # Task에서 S3/RDS 등 접근 권한 (Task Role과 Execution Role을 동일하게 사용)
+      ContainerDefinitions:
+        - Name: travelog-app-container
+          Image: !Sub "${ECRRepositoryUri}:${AppImageTag}" # ECR URI + 태그
+          PortMappings:
+            - ContainerPort: !Ref ContainerPort
+              HostPort: !Ref ContainerPort
+              Protocol: tcp
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref EcsLogGroup
+              awslogs-region: !Ref "AWS::Region"
+              awslogs-stream-prefix: ecs
+          # 환경 변수 설정
+          Environment:
+            - Name: DB_HOST
+              Value: !Ref DbHost
+            - Name: DB_PORT
+              Value: !Ref DbPort
+            - Name: DB_NAME
+              Value: !Ref DbName
+            - Name: DB_USER
+              Value: !Ref DbUser
+            - Name: DB_PASSWORD
+              Value: !Ref DbPassword
+            - Name: SPRING_PROFILES_ACTIVE
+              Value: !Ref SpringProfilesActive
+          # 헬스 체크 설정 (선택 사항이나 권장)
+          HealthCheck:
+            Command: ["CMD-SHELL", "curl -f http://localhost:8080/ || exit 1"]
+            Interval: 30
+            Timeout: 5
+            Retries: 3
+            StartPeriod: 10
+
+  # 6. ECS Task 로그 그룹
+  EcsLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: /ecs/travelog-app
+      RetentionInDays: 7
+
+  # =========================================================================
+  # 7. ECS Service (Fargate)
+  # =========================================================================
+  TravelogEcsService:
+    Type: AWS::ECS::Service
+    DependsOn: TravelogListener # 리스너보다 서비스가 나중에 생성되도록 의존성 설정
+    Properties:
+      ServiceName: travelog-service
+      Cluster: !Ref EcsCluster
+      TaskDefinition: !Ref TravelogTaskDefinition
+      DesiredCount: 1 # 실행할 Task 개수
+      LaunchType: FARGATE
+      DeploymentConfiguration:
+        MaximumPercent: 200
+        MinimumHealthyPercent: 100
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          Subnets:
+            - !Ref PrivateAppSubnetAId # Private Subnet A
+            - !Ref PrivateAppSubnetCId # Private Subnet C
+          SecurityGroups:
+            - !Ref EcsSecurityGroupId
+          AssignPublicIp: DISABLED # Fargate는 Private Subnet에 배포되므로 Public IP는 비활성화
+      LoadBalancers:
+        - ContainerName: travelog-app-container
+          ContainerPort: !Ref ContainerPort
+          TargetGroupArn: !Ref TravelogTargetGroup
+      Tags:
+        - Key: Name
+          Value: travelog-service
+
+Outputs:
+  ClusterName:
+    Description: ECS Cluster Name
+    Value: !Ref EcsCluster
+  ServiceUrl:
+    Description: The URL for the application
+    Value: !GetAtt TravelogALB.DNSName
+    Export:
+      Name: travelog-AppServiceUrl
