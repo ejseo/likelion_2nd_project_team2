@@ -8,8 +8,10 @@ spring:
         access-key: ${AWS_ACCESS_KEY}
         secret-key: ${AWS_SECRET_KEY}
       s3:
-        endpoint: ${AWS_S3_ENDPOINT_URL}
-        path-style-access-enabled: true
+        bucket: ${AWS_S3_BUCKET_NAME}
+        # 필요할 경우 endpoint 사용
+        # endpoint: ${AWS_S3_ENDPOINT_URL}
+        # path-style-access-enabled: true
 
   # Kakao OAuth2
   security:
@@ -44,6 +46,7 @@ spring:
 
   # Database (MySQL)
   datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
     url: ${DB_URL}
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
@@ -51,12 +54,12 @@ spring:
   # JPA
   jpa:
     hibernate:
-      ddl-auto: update # 개발 초기 단계에서는 update 또는 create, 운영에서는 validate 또는 none 사용
+      ddl-auto: validate # 개발 초기 단계에서는 update 또는 create, 운영에서는 validate 또는 none 사용
 
 # AWS S3 Bucket
-aws:
-  s3:
-    bucket: ${AWS_S3_BUCKET_NAME}
+#aws:
+#  s3:
+#    bucket: ${AWS_S3_BUCKET_NAME}
 
 # JWT
 jwt:
