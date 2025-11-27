@@ -1,88 +1,121 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: Route Tables (Public / Private-App / Private-DB)
+Description: Route tables for travelog VPC (Public / Private-App / Private-DB)
 
 Parameters:
   VpcId:
     Type: String
+
   InternetGatewayId:
     Type: String
+
   NatGatewayId:
     Type: String
+
   PublicSubnetAId:
     Type: String
   PublicSubnetCId:
     Type: String
+
   PrivateAppSubnetAId:
     Type: String
   PrivateAppSubnetCId:
     Type: String
+
   PrivateDbSubnetAId:
     Type: String
   PrivateDbSubnetCId:
     Type: String
 
 Resources:
+  # ---------------------------
+  # 1. Public Route Table
+  # ---------------------------
   PublicRouteTable:
     Type: AWS::EC2::RouteTable
     Properties:
       VpcId: !Ref VpcId
+      Tags:
+        - Key: Name
+          Value: travelog-rt-public
 
   PublicDefaultRoute:
     Type: AWS::EC2::Route
+    DependsOn: PublicRouteTable
     Properties:
       RouteTableId: !Ref PublicRouteTable
       DestinationCidrBlock: 0.0.0.0/0
       GatewayId: !Ref InternetGatewayId
 
-  PublicAssocA:
+  PublicSubnetAAssoc:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
       SubnetId: !Ref PublicSubnetAId
       RouteTableId: !Ref PublicRouteTable
 
-  PublicAssocC:
+  PublicSubnetCAssoc:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
       SubnetId: !Ref PublicSubnetCId
       RouteTableId: !Ref PublicRouteTable
 
+  # ---------------------------
+  # 2. Private App Route Table
+  # ---------------------------
   PrivateAppRouteTable:
     Type: AWS::EC2::RouteTable
     Properties:
       VpcId: !Ref VpcId
+      Tags:
+        - Key: Name
+          Value: travelog-rt-private-app
 
   PrivateAppDefaultRoute:
     Type: AWS::EC2::Route
+    DependsOn: PrivateAppRouteTable
     Properties:
       RouteTableId: !Ref PrivateAppRouteTable
       DestinationCidrBlock: 0.0.0.0/0
       NatGatewayId: !Ref NatGatewayId
 
-  PrivateAppAssocA:
+  PrivateAppSubnetAAssoc:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
       SubnetId: !Ref PrivateAppSubnetAId
       RouteTableId: !Ref PrivateAppRouteTable
 
-  PrivateAppAssocC:
+  PrivateAppSubnetCAssoc:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
       SubnetId: !Ref PrivateAppSubnetCId
       RouteTableId: !Ref PrivateAppRouteTable
 
+  # ---------------------------
+  # 3. Private DB Route Table
+  # ---------------------------
   PrivateDbRouteTable:
     Type: AWS::EC2::RouteTable
     Properties:
       VpcId: !Ref VpcId
+      Tags:
+        - Key: Name
+          Value: travelog-rt-private-db
 
-  PrivateDbAssocA:
+  PrivateDbSubnetAAssoc:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
       SubnetId: !Ref PrivateDbSubnetAId
       RouteTableId: !Ref PrivateDbRouteTable
 
-  PrivateDbAssocC:
+  PrivateDbSubnetCAssoc:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
       SubnetId: !Ref PrivateDbSubnetCId
       RouteTableId: !Ref PrivateDbRouteTable
+
+Outputs:
+  PublicRouteTableId:
+    Value: !Ref PublicRouteTable
+  PrivateAppRouteTableId:
+    Value: !Ref PrivateAppRouteTable
+  PrivateDbRouteTableId:
+    Value: !Ref PrivateDbRouteTable
