@@ -42,7 +42,8 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 
         http.authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/", "/auth/**", "/login", "/posts", "/css/**", "/js/**", "/images/**").permitAll()
+                        // 🔥 [수정] /files/** 경로 추가 - 이미지 파일 접근 허용
+                        .requestMatchers("/", "/auth/**", "/login", "/posts", "/files/**", "/css/**", "/js/**", "/images/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/posts", "/api/posts/{postId}", "/api/posts/search").permitAll()
                         .requestMatchers("/posts/{id:[0-9]+}").authenticated()
                         .requestMatchers("/my-page").hasAnyRole("USER", "ADMIN")

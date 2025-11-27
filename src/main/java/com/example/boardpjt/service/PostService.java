@@ -33,11 +33,19 @@ public class PostService {
     public Post createPost(PostDTO.Request dto, String username) {
         UserAccount userAccount = userAccountRepository.findByUsername(username)
                 .orElseThrow(() -> new IllegalArgumentException("사용자 없음"));
+
         Post post = new Post();
         post.setAuthor(userAccount);
         post.setTitle(dto.getTitle());
         post.setContent(dto.getContent());
-        post.setImageUrl(dto.getImageUrl());
+
+        // ✅ imageUrl이 빈 문자열이나 공백인 경우 null로 처리
+        if (dto.getImageUrl() != null && !dto.getImageUrl().trim().isEmpty()) {
+            post.setImageUrl(dto.getImageUrl());
+        } else {
+            post.setImageUrl(null);
+        }
+
         post.setCategory(dto.getCategory());
         post.setRating(dto.getRating());
 
@@ -57,11 +65,14 @@ public class PostService {
         if (!post.getAuthor().getUsername().equals(username)) {
             throw new SecurityException("작성자만 수정 가능");
         }
+
         post.setTitle(dto.getTitle());
         post.setContent(dto.getContent());
-        if (dto.getImageUrl() != null) {
-            post.setImageUrl(dto.getImageUrl());
-        }
+
+        // [버그 수정] 이미지 URL을 항상 DTO의 값으로 업데이트합니다.
+        // 이렇게 해야 이미지 삭제 시 컨트롤러에서 설정한 null 값이 DB에 반영됩니다.
+        post.setImageUrl(dto.getImageUrl());
+
         post.setCategory(dto.getCategory());
         post.setRating(dto.getRating());
 
@@ -99,7 +110,7 @@ public class PostService {
         List<Long> postIds = postTags.stream().map(pt -> pt.getPost().getId()).collect(Collectors.toList());
         return postRepository.findByIdIn(postIds, pageable);
     }
-    
+
     @Transactional(readOnly = true)
     public long getLikeCount(Post post) {
         return postLikeRepository.countByPost(post);
@@ -111,7 +122,7 @@ public class PostService {
         if (userAccountOpt.isEmpty()) {
             return false;
         }
-        
+
         Optional<Post> postOpt = postRepository.findById(postId);
         if (postOpt.isEmpty()) {
             return false;

@@ -35,11 +35,11 @@ public class PostController {
 
     @GetMapping
     public String list(Model model,
-                      @RequestParam(defaultValue = "1") int page,
-                      @RequestParam(required = false) String keyword,
-                      @RequestParam(required = false) String category,
-                      @RequestParam(defaultValue = "titleContent") String searchType,
-                      @RequestParam(defaultValue = "latest") String sort) {
+                       @RequestParam(defaultValue = "1") int page,
+                       @RequestParam(required = false) String keyword,
+                       @RequestParam(required = false) String category,
+                       @RequestParam(defaultValue = "titleContent") String searchType,
+                       @RequestParam(defaultValue = "latest") String sort) {
         keyword = (keyword == null) ? "" : keyword;
         Page<Post> postPage = postService.findWithPagingAndSearchAndCategory(keyword, category, searchType, sort, page - 1);
         model.addAttribute("currentPage", page);
@@ -61,25 +61,43 @@ public class PostController {
                          BindingResult bindingResult,
                          @RequestParam("file") MultipartFile file,
                          Authentication authentication,
-                         RedirectAttributes redirectAttributes) {
+                         RedirectAttributes redirectAttributes,
+                         Model model) {  // ✅ Model 추가
+
         if (bindingResult.hasErrors()) {
+            // ✅ 에러 발생 시 폼으로 돌아갈 때 깨끗한 상태로
+            model.addAttribute("post", dto);
             return "post/form";
         }
 
         try {
+            // ✅ 파일이 있을 때만 업로드 처리
             if (file != null && !file.isEmpty()) {
                 String savedFileName = fileStorageService.uploadFile(file);
                 dto.setImageUrl(savedFileName);
+            } else {
+                // ✅ 파일이 없으면 imageUrl을 명시적으로 null로 설정
+                dto.setImageUrl(null);
             }
+
             postService.createPost(dto, authentication.getName());
+            return "redirect:/posts";
 
-        } catch (IOException | IllegalArgumentException e) {
+        } catch (IllegalArgumentException e) {
+            // ✅ 이미지 업로드 실패 시 - 폼으로 돌아가면서 데이터는 유지하되 imageUrl은 제거
             log.error("File upload failed", e);
-            redirectAttributes.addFlashAttribute("error", "파일 업로드에 실패했습니다: " + e.getMessage());
-            return "redirect:/posts/new";
-        }
+            dto.setImageUrl(null);  // ⭐ 중요: 실패한 imageUrl 초기화
+            model.addAttribute("post", dto);
+            model.addAttribute("error", "파일 업로드에 실패했습니다: " + e.getMessage());
+            return "post/form";  // redirect 대신 forward로 변경
 
-        return "redirect:/posts";
+        } catch (IOException e) {
+            log.error("File IO error", e);
+            dto.setImageUrl(null);
+            model.addAttribute("post", dto);
+            model.addAttribute("error", "파일 처리 중 오류가 발생했습니다.");
+            return "post/form";
+        }
     }
 
     @PostMapping("/{id}/edit")
@@ -90,25 +108,58 @@ public class PostController {
                        Authentication authentication,
                        Model model,
                        RedirectAttributes redirectAttributes) {
+
         if (bindingResult.hasErrors()) {
             model.addAttribute("postId", id);
+            model.addAttribute("post", dto);
             return "post/edit";
         }
 
         try {
+            // 제안: 이미지 처리 로직을 서비스 계층으로 옮기기 전에 컨트롤러에서 파일을 먼저 처리합니다.
+            Post existingPost = postService.findById(id);
+            String existingImageUrl = existingPost.getImageUrl();
+
+            // 1. 이미지 삭제가 요청되었고, 새 파일이 없는 경우
+            if (dto.isDeleteImage() && (file == null || file.isEmpty())) {
+                if (existingImageUrl != null) {
+                    fileStorageService.deleteFile(existingImageUrl);
+                }
+                dto.setImageUrl(null); // DB에 null로 업데이트하도록 설정
+            }
+            // 2. 새 파일이 업로드된 경우
             if (file != null && !file.isEmpty()) {
+                // 기존 이미지가 있으면 삭제
+                if (existingImageUrl != null) {
+                    fileStorageService.deleteFile(existingImageUrl);
+                }
+                // 새 파일 업로드 후 DTO에 URL 설정
                 String savedFileName = fileStorageService.uploadFile(file);
                 dto.setImageUrl(savedFileName);
             }
+
             postService.updatePost(id, dto, authentication.getName());
+            return "redirect:/posts/" + id;
 
-        } catch (IOException | IllegalArgumentException | SecurityException e) {
-            log.error("Post update failed", e);
-            redirectAttributes.addFlashAttribute("error", "게시글 수정에 실패했습니다: " + e.getMessage());
-            return "redirect:/posts/" + id + "/edit";
+        } catch (IllegalArgumentException e) {
+            log.error("File upload failed", e);
+            model.addAttribute("postId", id);
+            model.addAttribute("post", dto);
+            model.addAttribute("error", "파일 업로드에 실패했습니다: " + e.getMessage());
+            return "post/edit";
+
+        } catch (IOException e) {
+            log.error("File IO error", e);
+            model.addAttribute("postId", id);
+            model.addAttribute("post", dto);
+            model.addAttribute("error", "파일 처리 중 오류가 발생했습니다.");
+            return "post/edit";
+
+        } catch (SecurityException e) {
+            log.error("Post update permission denied", e);
+            redirectAttributes.addFlashAttribute("error", "게시글을 수정할 권한이 없습니다.");
+            return "redirect:/posts/" + id;
         }
-
-        return "redirect:/posts/" + id;
     }
 
     @GetMapping("/{id}")
@@ -138,6 +189,7 @@ public class PostController {
 
     @GetMapping("/new")
     public String createForm(Model model) {
+        // ✅ 항상 새로운 깨끗한 DTO 객체 생성
         model.addAttribute("post", new PostDTO.Request());
         return "post/form";
     }

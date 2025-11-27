@@ -718,6 +718,9 @@
                 </div>
                 <input type="file" id="file" name="file" accept="image/*">
 
+                <!-- 제안: 이미지 삭제 여부를 서버에 알리기 위한 숨겨진 필드 추가 -->
+                <input type="hidden" id="deleteImage" name="deleteImage" value="false">
+
                 <div class="image-preview" id="imagePreview">
                     <img id="previewImage" class="preview-image" alt="Preview">
                     <button type="button" class="preview-remove" id="removeImage">×</button>
@@ -743,7 +746,8 @@
     const existingRating = /*[[${post.rating}]]*/ 0;
     const existingTags = /*[[${post.tags}]]*/ [];
     const existingCategory = /*[[${post.category}]]*/ '';
-    const existingImageUrl = /*[[${post.imageUrl}]]*/ '';
+    // [버그 수정] JavaScript에서 Thymeleaf 변수를 사용할 때는 주석 문법을 사용해야 합니다.
+    const existingImageUrl = /*[[${existingImageUrl}]]*/ null;
 
     // Set initial category
     if (existingCategory) {
@@ -879,7 +883,11 @@
 
     const removeCurrentImage = document.getElementById('removeCurrentImage');
     removeCurrentImage.addEventListener('click', function() {
+        // 제안: 현재 이미지 섹션을 숨기고, 'deleteImage' 필드 값을 'true'로 설정하여 서버에 삭제 의사를 전달합니다.
         document.getElementById('currentImageSection').style.display = 'none';
+        document.getElementById('deleteImage').value = 'true';
+        // 제안: 기존 이미지를 삭제하면 새 이미지를 업로드할 수 있도록 업로드 영역을 다시 보여줍니다.
+        document.getElementById('uploadArea').style.display = 'block';
     });
 
     // New Image Upload
@@ -951,6 +959,8 @@
         // Show current image again if it exists
         if (existingImageUrl) {
             document.getElementById('currentImageSection').style.display = 'block';
+            // 제안: 새 이미지 선택을 취소했으므로, 기존 이미지 삭제 의사도 철회합니다.
+            document.getElementById('deleteImage').value = 'false';
         }
     });
 

@@ -1,28 +1,35 @@
 package com.example.boardpjt.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+import software.amazon.awssdk.services.s3.model.S3Exception;
 
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class FileStorageService {
 
     private final S3Client s3Client;
 
-    @Value("${aws.s3.bucket}")
+    @Value("${spring.cloud.aws.region.static}")
+    private String region;
+
+    @Value("${spring.cloud.aws.s3.bucket}")
     private String bucket;
 
-    // [추가] 허용할 이미지 파일의 Content-Type 목록
+    // 제안: 허용할 이미지 파일의 Content-Type 목록을 상수로 관리합니다.
     private static final List<String> ALLOWED_IMAGE_CONTENT_TYPES = Arrays.asList(
             "image/jpeg", "image/png", "image/gif", "image/bmp", "image/webp"
     );
@@ -32,7 +39,7 @@ public class FileStorageService {
             return null;
         }
 
-        // [추가] 파일 타입 검증
+        // 파일 타입 검증
         if (!isImageFile(file)) {
             throw new IllegalArgumentException("이미지 파일 형식만 업로드할 수 있습니다. (jpeg, png, gif, bmp, webp)");
         }
@@ -51,7 +58,40 @@ public class FileStorageService {
         return fileName;
     }
 
-    // [추가] 이미지 파일인지 확인하는 헬퍼 메서드
+    /**
+     * 제안: S3에서 파일을 삭제하는 메서드를 추가합니다.
+     * @param fileName 삭제할 파일의 이름 (S3 객체 키)
+     */
+    public void deleteFile(String fileName) {
+        if (fileName == null || fileName.isEmpty()) {
+            log.warn("삭제할 파일 이름이 제공되지 않았습니다.");
+            return;
+        }
+
+        DeleteObjectRequest deleteObjectRequest = DeleteObjectRequest.builder()
+                .bucket(bucket)
+                .key(fileName)
+                .build();
+
+        try {
+            s3Client.deleteObject(deleteObjectRequest);
+            log.info("S3에서 파일 삭제 성공: {}", fileName);
+        } catch (S3Exception e) {
+            log.error("S3 파일 삭제 중 오류 발생: {}", fileName, e);
+        }
+    }
+
+    /**
+     * 예: "uuid_filename.jpg" -> "https://버킷명.s3.리전.amazonaws.com/uuid_filename.jpg"
+     */
+    public String getFileUrl(String fileName) {
+        if (fileName == null || fileName.isEmpty()) {
+            return null;
+        }
+        return String.format("https://%s.s3.%s.amazonaws.com/%s", bucket, region, fileName);
+    }
+
+    // 이미지 파일인지 확인하는 헬퍼 메서드
     private boolean isImageFile(MultipartFile file) {
         return ALLOWED_IMAGE_CONTENT_TYPES.contains(file.getContentType());
     }

@@ -758,9 +758,10 @@
 
                 <!-- [추가] 태그 표시 -->
                 <div th:if="${post.tags != null and !post.tags.isEmpty()}" class="post-tags">
-                    <span th:each="tag : ${#strings.arraySplit(post.tags, ',')}"
+                    <!-- [버그 수정] post.tags는 이미 List<String>이므로, 문자열 분리 없이 직접 사용합니다. -->
+                    <span th:each="tag : ${post.tags}"
                           class="post-tag"
-                          th:text="'#' + ${#strings.trim(tag)}">#제주</span>
+                          th:text="'#' + ${tag}">#제주</span>
                 </div>
             </div>
         </a>

@@ -25,6 +25,8 @@ public class PostDTO {
         private String category;
         private Integer rating;
         private List<String> tags;
+        // 이미지 삭제 여부를 전달받기 위한 필드
+        private boolean deleteImage = false;
     }
 
     public record Response(
