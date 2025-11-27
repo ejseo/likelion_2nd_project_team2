@@ -1,19 +1,19 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: RDS MySQL DB
+Description: RDS MySQL DB Instance Stack with Public Access Enabled
 
 Parameters:
   VpcId:
     Type: AWS::EC2::VPC::Id
-    Description: travelog-vpc
+    Description: travelog-vpc (VPC ID)
   PrivateSubnetAId:
     Type: AWS::EC2::Subnet::Id
-    Description: travelog-private-db-a
+    Description: travelog-private-db-a (AZ-A DB Subnet ID)
   PrivateSubnetCId:
     Type: AWS::EC2::Subnet::Id
-    Description: travelog-private-db-c
+    Description: travelog-private-db-c (AZ-C DB Subnet ID)
   ECSSecurityGroupId:
     Type: AWS::EC2::SecurityGroup::Id
-    Description: SG-RDS
+    Description: RDS에 접근을 허용할 ECS Security Group ID (Source for Ingress)
   DbMasterUsername:
     Type: String
     Default: admin
@@ -33,7 +33,6 @@ Resources:
   RDSDBSubnetGroup:
     Type: AWS::RDS::DBSubnetGroup
     Properties:
-      # AWS::StackName을 사용하여 스택 이름 기반의 고유한 이름을 생성합니다. (수정됨)
       DBSubnetGroupName: !Sub "${AWS::StackName}-db-subnet-group"
       DBSubnetGroupDescription: "DB Subnet Group for travelog RDS instance"
       SubnetIds:
@@ -43,6 +42,7 @@ Resources:
   #####################################################################
   # 2. RDS 보안 그룹 (SG-RDS)
   #    - 인바운드 3306 포트를 ECS 보안 그룹에서만 허용
+  #    - 아웃바운드는 템플릿에서 정의할 필요 없이 기본적으로 ALL-ALL 허용됨
   #####################################################################
   RDSDBSecurityGroup:
     Type: AWS::EC2::SecurityGroup
@@ -50,25 +50,25 @@ Resources:
       GroupName: "SG-RDS-travelog"
       GroupDescription: "Security Group for RDS, allowing traffic only from ECS Security Group"
       VpcId: !Ref VpcId
+      # 인바운드 규칙: ECS Security Group에서 3306 포트 접근 허용
       SecurityGroupIngress:
         - IpProtocol: tcp
           FromPort: 3306
           ToPort: 3306
-          SourceSecurityGroupId: !Ref ECSSecurityGroupId # SG-ECS에서만 3306 접근 허용
+          SourceSecurityGroupId: !Ref ECSSecurityGroupId
       Tags:
         - Key: Name
           Value: "SG-RDS-travelog"
 
   #####################################################################
   # 3. RDS DB 인스턴스
-  #    - 요구 사항에 따른 구성 (MySQL 8.0.35, Multi-AZ, db.t3.micro)
   #####################################################################
   RDSDBInstance:
     Type: AWS::RDS::DBInstance
-    DeletionPolicy: Snapshot # 스택 삭제 시 데이터 손실 방지를 위해 스냅샷 생성
+    DeletionPolicy: Snapshot
     Properties:
       # 인스턴스 및 엔진 설정
-      DBName: "travelog" # DB 이름
+      DBName: "travelog"
       Engine: mysql
       EngineVersion: "8.0.43"
       Port: 3306
@@ -80,21 +80,24 @@ Resources:
       DBSubnetGroupName: !Ref RDSDBSubnetGroup
       VPCSecurityGroups:
         - !GetAtt RDSDBSecurityGroup.GroupId
-      MultiAZ: true # 고가용성: YES
+      MultiAZ: true
+
+      # **요구사항 반영: Publicly Accessible 허용**
+      PubliclyAccessible: true
 
       # 스토리지 설정
       AllocatedStorage: "20"
       StorageType: gp3
 
       # 백업 설정
-      BackupRetentionPeriod: "7" # 자동 백업: 7일
+      BackupRetentionPeriod: "7"
 
-      # 기타 설정
-      PubliclyAccessible: false # 프라이빗 서브넷에 배포되므로 외부 접근 불가
       # Tag for easy identification
       Tags:
         - Key: Project
           Value: "travelogs3-project2"
+        - Key: Name
+          Value: "travelog-mysql-db"
 
 Outputs:
   DBEndpointAddress:
