@@ -9,6 +9,7 @@ import com.example.boardpjt.model.repository.PostLikeRepository;
 import com.example.boardpjt.model.repository.UserAccountRepository;
 import com.example.boardpjt.service.PostService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
@@ -16,6 +17,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -25,6 +27,7 @@ import java.util.stream.Collectors;
  */
 @Controller // Spring MVC 컨트롤러로 등록 (ViewResolver를 통해 뷰 이름을 실제 뷰로 변환)
 @RequiredArgsConstructor
+@Slf4j
 public class MainController {
 
     private final PostService postService;
@@ -44,8 +47,17 @@ public class MainController {
         // ViewResolver가 "index"를 templates/index.html로 변환하여 렌더링
         // 일반적으로 애플리케이션 소개, 로그인/회원가입 링크 등이 포함된 메인 페이지
 
-        // 최근 게시글 3개 조회
-        model.addAttribute("recentPosts", postService.findRecentPosts(3));
+        try {
+            log.info("Loading index page");
+            // 최근 게시글 3개 조회
+            List<Post> recentPosts = postService.findRecentPosts(3);
+            model.addAttribute("recentPosts", recentPosts);
+            log.info("Loaded {} recent posts", recentPosts.size());
+        } catch (Exception e) {
+            log.error("Error loading recent posts for index page", e);
+            // 에러 발생 시 빈 리스트 전달
+            model.addAttribute("recentPosts", Collections.emptyList());
+        }
 
         return "index";
     }
