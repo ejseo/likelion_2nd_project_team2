@@ -55,6 +55,7 @@ public class PostController {
         model.addAttribute("selectedTag", tag != null ? tag : ""); // [수정] 선택된 태그를 모델에 추가
         model.addAttribute("searchType", searchType);
         model.addAttribute("sort", sort);
+        model.addAttribute("totalElements", postPage.getTotalElements());
 
         // 제안: 인기 태그 목록을 조회하여 모델에 추가 (상위 5개)
         model.addAttribute("popularTags", postService.getPopularTags(5));

@@ -705,17 +705,7 @@
             <h4>서비스</h4>
             <ul class="footer-links">
                 <li><a href="/posts">여행 이야기</a></li>
-                <li><a href="/write">글쓰기</a></li>
                 <li><a href="/about">소개</a></li>
-                <li><a href="/faq">자주 묻는 질문</a></li>
-            </ul>
-        </div>
-        <div class="footer-section">
-            <h4>정보</h4>
-            <ul class="footer-links">
-                <li><a href="/terms">이용약관</a></li>
-                <li><a href="/privacy">개인정보처리방침</a></li>
-                <li><a href="/contact">문의하기</a></li>
             </ul>
         </div>
     </div>
@@ -741,23 +731,7 @@
         lastScroll = currentScroll;
     });
 
-    // Search functionality
-    const searchInput = document.querySelector('.search-box input');
-    const searchButton = document.querySelector('.search-box button');
-
-    searchButton.addEventListener('click', (e) => {
-        e.preventDefault();
-        if (searchInput.value.trim()) {
-            window.location.href = `/posts?search=${encodeURIComponent(searchInput.value)}`;
-        }
-    });
-
-    searchInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter' && searchInput.value.trim()) {
-            e.preventDefault();
-            window.location.href = `/posts?search=${encodeURIComponent(searchInput.value)}`;
-        }
-    });
+    // Search functionality - 폼 제출을 그대로 사용하므로 JavaScript 처리 제거
 </script>
 </body>
 </html>

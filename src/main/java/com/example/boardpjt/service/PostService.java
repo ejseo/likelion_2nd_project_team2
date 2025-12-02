@@ -134,7 +134,7 @@ public class PostService {
 
     @Transactional(readOnly = true)
     public Page<Post> findWithPagingAndSearch(String keyword, int page) {
-        Pageable pageable = PageRequest.of(page, 5);
+        Pageable pageable = PageRequest.of(page, 6);
         return postRepository.findByTitleContainingOrContentContainingOrderByIdDesc(keyword, keyword, pageable);
     }
 
@@ -144,20 +144,13 @@ public class PostService {
         searchType = (searchType == null) ? "titleContent" : searchType;
         sort = (sort == null) ? "latest" : sort;
 
-        // [수정] 태그가 파라미터로 전달된 경우, 태그 검색을 우선적으로 수행합니다.
-        if (tag != null && !tag.isEmpty()) {
-            Pageable pageable = PageRequest.of(page, 5, Sort.by(Sort.Direction.DESC, "id"));
-            List<PostTag> postTags = postTagRepository.findByTagName(tag);
-            List<Long> postIds = postTags.stream().map(pt -> pt.getPost().getId()).collect(Collectors.toList());
-            return postRepository.findByIdIn(postIds, pageable);
-        }
-
         // 정렬 기준 설정
         Sort sortOrder;
         switch (sort) {
             case "popular":
                 // 인기순은 별도 메서드 사용
-                return findWithPagingAndSearchBySortPopular(keyword, category, searchType, page);
+                return
+                        findWithPagingAndSearchBySortPopular(keyword, category, tag, searchType, page);
             case "rating":
                 sortOrder = Sort.by(Sort.Direction.DESC, "rating").and(Sort.by(Sort.Direction.DESC, "id"));
                 break;
@@ -166,8 +159,43 @@ public class PostService {
                 break;
         }
 
-        Pageable pageable = PageRequest.of(page, 5, sortOrder);
+        Pageable pageable = PageRequest.of(page, 6, sortOrder);
 
+        // [수정] 태그 필터링이 있는 경우
+        if (tag != null && !tag.isEmpty()) {
+            List<PostTag> postTags = postTagRepository.findByTagName(tag);
+            List<Long> postIds = postTags.stream().map(pt -> pt.getPost().getId()).collect(Collectors.toList());
+
+            if (postIds.isEmpty()) {
+                // 태그에 해당하는 게시물이 없으면 빈 페이지 반환
+                return Page.empty(pageable);
+            }
+
+            // 태그 + 카테고리 + 키워드 조합 처리
+            if (category == null || category.isEmpty()) {
+                // 태그만 또는 태그 + 키워드
+                if (keyword.isEmpty()) {
+                    return postRepository.findByIdIn(postIds, pageable);
+                } else if ("author".equals(searchType)) {
+                    // 태그 + 작성자 검색: 메모리에서 필터링
+                    return filterPostsByAuthor(postIds, keyword, pageable);
+                } else {
+                    // 태그 + 제목/내용 검색: 메모리에서 필터링
+                    return filterPostsByTitleOrContent(postIds, keyword, pageable);
+                }
+            } else {
+                // 태그 + 카테고리 (+ 키워드 옵션)
+                if (keyword.isEmpty()) {
+                    return filterPostsByCategory(postIds, category, pageable);
+                } else if ("author".equals(searchType)) {
+                    return filterPostsByCategoryAndAuthor(postIds, category, keyword, pageable);
+                } else {
+                    return filterPostsByCategoryAndTitleOrContent(postIds, category, keyword, pageable);
+                }
+            }
+        }
+
+        // 태그 필터링이 없는 경우 (기존 로직)
         if (category == null || category.isEmpty()) {
             // 카테고리 없이 검색
             if (keyword.isEmpty()) {
@@ -190,9 +218,107 @@ public class PostService {
         }
     }
 
-    private Page<Post> findWithPagingAndSearchBySortPopular(String keyword, String category, String searchType, int page) {
-        Pageable pageable = PageRequest.of(page, 5);
+    // 태그 필터링된 게시물 중 카테고리로 추가 필터링하는 헬퍼 메서드들
+    private Page<Post> filterPostsByCategory(List<Long> postIds, String category, Pageable pageable) {
+        List<Post> posts = postRepository.findAllById(postIds).stream()
+                .filter(post -> category.equals(post.getCategory()))
+                .sorted((p1, p2) -> p2.getId().compareTo(p1.getId()))
+                .collect(Collectors.toList());
+        return createPageFromList(posts, pageable);
+    }
 
+    private Page<Post> filterPostsByAuthor(List<Long> postIds, String username, Pageable pageable) {
+        List<Post> posts = postRepository.findAllById(postIds).stream()
+                .filter(post -> post.getAuthor().getUsername().contains(username))
+                .sorted((p1, p2) -> p2.getId().compareTo(p1.getId()))
+                .collect(Collectors.toList());
+        return createPageFromList(posts, pageable);
+    }
+
+    private Page<Post> filterPostsByTitleOrContent(List<Long> postIds, String keyword, Pageable pageable) {
+        List<Post> posts = postRepository.findAllById(postIds).stream()
+                .filter(post -> post.getTitle().contains(keyword) || post.getContent().contains(keyword))
+                .sorted((p1, p2) -> p2.getId().compareTo(p1.getId()))
+                .collect(Collectors.toList());
+        return createPageFromList(posts, pageable);
+    }
+
+    private Page<Post> filterPostsByCategoryAndAuthor(List<Long> postIds, String category, String username, Pageable pageable) {
+        List<Post> posts = postRepository.findAllById(postIds).stream()
+                .filter(post -> category.equals(post.getCategory()) && post.getAuthor().getUsername().contains(username))
+                .sorted((p1, p2) -> p2.getId().compareTo(p1.getId()))
+                .collect(Collectors.toList());
+        return createPageFromList(posts, pageable);
+    }
+
+    private Page<Post> filterPostsByCategoryAndTitleOrContent(List<Long> postIds, String category, String keyword, Pageable pageable) {
+        List<Post> posts = postRepository.findAllById(postIds).stream()
+                .filter(post -> category.equals(post.getCategory()) &&
+                        (post.getTitle().contains(keyword) || post.getContent().contains(keyword)))
+                .sorted((p1, p2) -> p2.getId().compareTo(p1.getId()))
+                .collect(Collectors.toList());
+        return createPageFromList(posts, pageable);
+    }
+
+    private Page<Post> createPageFromList(List<Post> posts, Pageable pageable) {
+        int start = (int) pageable.getOffset();
+        int end = Math.min((start + pageable.getPageSize()), posts.size());
+
+        if (start > posts.size()) {
+            return Page.empty(pageable);
+        }
+
+        return new org.springframework.data.domain.PageImpl<>(
+                posts.subList(start, end),
+                pageable,
+                posts.size()
+        );
+    }
+
+    private Page<Post> findWithPagingAndSearchBySortPopular(String keyword, String category, String tag, String searchType, int page) {
+        Pageable pageable = PageRequest.of(page, 6);
+
+        // 태그 필터링이 있는 경우
+        if (tag != null && !tag.isEmpty()) {
+            List<PostTag> postTags = postTagRepository.findByTagName(tag);
+            List<Long> postIds = postTags.stream().map(pt -> pt.getPost().getId()).collect(Collectors.toList());
+
+            if (postIds.isEmpty()) {
+                return Page.empty(pageable);
+            }
+
+            // 태그로 필터링된 게시물들을 좋아요 수로 정렬
+            List<Post> posts = postRepository.findAllById(postIds).stream()
+                    .filter(post -> {
+                        // 카테고리 필터 적용
+                        if (category != null && !category.isEmpty() && !category.equals(post.getCategory())) {
+                            return false;
+                        }
+                        // 키워드 필터 적용
+                        if (!keyword.isEmpty()) {
+                            if ("author".equals(searchType)) {
+                                return post.getAuthor().getUsername().contains(keyword);
+                            } else {
+                                return post.getTitle().contains(keyword) || post.getContent().contains(keyword);
+                            }
+                        }
+                        return true;
+                    })
+                    .sorted((p1, p2) -> {
+                        long likeCount1 = getLikeCount(p1);
+                        long likeCount2 = getLikeCount(p2);
+                        int cmp = Long.compare(likeCount2, likeCount1);
+                        if (cmp == 0) {
+                            return p2.getId().compareTo(p1.getId());
+                        }
+                        return cmp;
+                    })
+                    .collect(Collectors.toList());
+
+            return createPageFromList(posts, pageable);
+        }
+
+        // 태그 필터링이 없는 경우 (기존 로직)
         if (category == null || category.isEmpty()) {
             // 카테고리 없이 검색
             if (keyword.isEmpty()) {
