@@ -8,7 +8,7 @@
 ### 주요 기능
 - **회원 관리**: 일반 회원가입/로그인 및 카카오 소셜 로그인
 - **리뷰 작성**: 여행지 리뷰 작성 및 다중 이미지 업로드 (평점, 카테고리, 태그 지원)
-- **소셜 기능**: 좋아요, 북마크, 댓글/대댓글
+- **소셜 기능**: 좋아요, 북마크, 댓글/대댓글, 팔로우/언팔로우
 - **인증/인가**: JWT 기반 Access/Refresh Token 관리
 - **파일 관리**: AWS S3 + CloudFront를 통한 이미지 저장 및 배포
 
@@ -44,7 +44,7 @@
 - **Build Tool**: Gradle
 
 ### Database & Cache
-- **RDS**: MySQL 8.x (db.t3.micro, 20GB)
+- **RDS**: MySQL 8.0.43 (db.t3.micro, 20GB)
 - **Cache**: AWS ElastiCache Serverless (Redis)
     - Refresh Token 저장 (TTL: 7일)
 
@@ -61,12 +61,10 @@
 
 ### DevOps & Tools
 - **Container**: Docker (Multi-stage build)
-- **CI/CD**: GitHub Actions (예정)
 - **IaC**: AWS CloudFormation (YAML)
 - **Monitoring**: CloudWatch
 
 ### External Services
-- **OAuth**: Kakao Login
 - **CDN**: CloudFront
 
 ---
@@ -94,7 +92,7 @@ VPC CIDR: 10.0.0.0/16
 - **Deployment**: Rolling Update
 
 ### RDS MySQL
-- **Engine**: MySQL 8.x
+- **Engine**: MySQL 8.0.43
 - **Instance**: db.t3.micro
 - **Storage**: 20GB gp2
 - **Multi-AZ**: Disabled (개발 환경)
@@ -128,46 +126,73 @@ VPC CIDR: 10.0.0.0/16
 ### 패키지 구조
 ```
 com.example.boardpjt
-├── config/                 # 설정 클래스
-│   ├── RedisConfig         # Redis 연결 설정 (SSL, 커넥션 풀)
-│   ├── SecurityConfig      # Spring Security + JWT
-│   ├── S3Config           # AWS S3 클라이언트 설정
-│   └── JpaConfig          # JPA Auditing 설정
-├── controller/            # REST API 컨트롤러
-│   ├── AuthController     # 로그인, 로그아웃, 회원가입
-│   ├── PostController     # 리뷰 CRUD
-│   ├── UserController     # 마이페이지, 프로필
-│   └── CommentController  # 댓글 관리
-├── service/               # 비즈니스 로직
-│   ├── UserAccountService
-│   ├── PostService
-│   ├── CommentService
-│   └── S3Service          # 이미지 업로드/삭제
+├── BoardpjtApplication.java
+├── config/                       # 설정 클래스
+│   ├── GlobalControllerAdvice.java  # 전역 예외 처리 및 컨트롤러 어드바이스
+│   ├── RedisConfig.java          # Redis 연결 설정 (SSL, 커넥션 풀)
+│   ├── SecurityConfig.java       # Spring Security + JWT
+│   ├── S3Config.java             # AWS S3 클라이언트 설정
+│   └── JpaConfig.java            # JPA Auditing 설정
+├── controller/                   # 컨트롤러 (View + API)
+│   ├── AdminController.java      # 관리자 페이지
+│   ├── AuthController.java       # 로그인, 로그아웃, 회원가입 (View)
+│   ├── BookmarkApiController.java   # 북마크 API
+│   ├── CommentApiController.java    # 댓글/대댓글 API
+│   ├── FileController.java       # 파일 업로드/다운로드
+│   ├── FollowApiController.java  # 팔로우/언팔로우 API
+│   ├── MainController.java       # 메인 페이지
+│   ├── PostApiController.java    # 리뷰 API (좋아요, 검색 등)
+│   ├── PostController.java       # 리뷰 CRUD (View)
+│   └── UserController.java       # 마이페이지, 프로필
+├── service/                      # 비즈니스 로직
+│   ├── BookmarkService.java      # 북마크 관리
+│   ├── CommentService.java       # 댓글 관리
+│   ├── CustomOAuth2UserService.java  # OAuth2 사용자 처리
+│   ├── CustomUserDetailsService.java # Spring Security UserDetails
+│   ├── FileStorageService.java   # S3 파일 업로드/삭제
+│   ├── FollowService.java        # 팔로우 관리
+│   ├── PostService.java          # 리뷰 관리
+│   └── UserAccountService.java   # 회원 관리
 ├── model/
-│   ├── entity/            # JPA 엔티티
-│   │   ├── UserAccount
-│   │   ├── Post
-│   │   ├── PostImage
-│   │   ├── Comment
-│   │   ├── PostLike
-│   │   ├── PostBookmark
-│   │   └── RefreshToken   # Redis 저장용
-│   ├── dto/               # 데이터 전송 객체
-│   └── repository/        # JPA/Redis Repository
-├── filter/                # Spring Security Filter
-│   └── JwtAuthenticationFilter
-├── handler/               # OAuth2 핸들러
-├── util/                  # 유틸리티
-│   ├── JwtUtil            # JWT 생성/검증
-│   └── CookieUtil         # 쿠키 관리
-└── exception/             # 예외 처리
+│   ├── entity/                   # JPA 엔티티
+│   │   ├── BaseEntity.java       # 공통 엔티티 (생성일/수정일)
+│   │   ├── Bookmark.java         # 북마크
+│   │   ├── Comment.java          # 댓글 (대댓글 지원)
+│   │   ├── Post.java             # 리뷰 게시글
+│   │   ├── PostLike.java         # 좋아요
+│   │   ├── PostTag.java          # 태그
+│   │   ├── RefreshToken.java     # Refresh Token (Redis 저장)
+│   │   └── UserAccount.java      # 사용자 계정
+│   ├── dto/                      # 데이터 전송 객체
+│   │   ├── CommentDTO.java
+│   │   ├── OAuthAttributes.java
+│   │   ├── PasswordChangeDTO.java
+│   │   ├── PostDTO.java
+│   │   └── UserRegisterDTO.java
+│   └── repository/               # JPA/Redis Repository
+│       ├── BookmarkRepository.java
+│       ├── CommentRepository.java
+│       ├── PostLikeRepository.java
+│       ├── PostRepository.java
+│       ├── PostTagRepository.java
+│       ├── RefreshTokenRepository.java
+│       └── UserAccountRepository.java
+├── filter/                       # Spring Security Filter
+│   ├── JwtFilter.java            # JWT 인증 필터
+│   └── RefreshJwtFilter.java     # Refresh Token 필터
+├── handler/                      # OAuth2 핸들러
+│   └── OAuth2LoginSuccessHandler.java
+├── util/                         # 유틸리티
+│   ├── JwtUtil.java              # JWT 생성/검증
+│   └── CookieUtil.java           # 쿠키 관리
+└── exception/                    # 예외 처리
+    └── GlobalExceptionHandler.java
 ```
 
 ### 주요 도메인 기능
 
 #### 인증/인가
 - **일반 로그인**: JWT Access Token (1시간) + Refresh Token (7일)
-- **소셜 로그인**: Kakao OAuth2
 - **Refresh Token**: Redis에 저장 (서버 측 검증)
 - **로그아웃**: Cookie 삭제 + Redis Token 무효화 (에러 핸들링 포함)
 
@@ -181,6 +206,7 @@ com.example.boardpjt
 - **좋아요**: 사용자별 중복 방지 (Composite Key)
 - **북마크**: 나중에 읽기 기능
 - **댓글**: 대댓글 지원 (self-referencing)
+- **팔로우**: 사용자 간 팔로우/언팔로우 기능
 
 ---
 
@@ -348,5 +374,5 @@ aws s3api get-bucket-policy --bucket travelog-review-images
 - **백엔드 1** : 핵심 비즈니스 로직, JPA, Security, 컨트롤러
 - **백엔드 2** : 옵션 모듈(DDB/SQS 등) 연동, API 스펙 정리
     - 서은정, 심소현
-- **DevOps & 운영 문서(릴리즈/운영 담당)** : Docker/ECR, GitHub Actions, README/문서, 모니터링, 발표자료
+- **DevOps & 운영 문서(릴리즈/운영 담당)** : Docker/ECR, README/문서, 모니터링, 발표자료
     - 김진호
