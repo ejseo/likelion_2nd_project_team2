@@ -1,0 +1,995 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${post.title} + ' - Travelog'">게시글 - Travelog</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Serif KR', serif;
+            color: #222;
+            line-height: 1.8;
+            background-color: #fafafa;
+        }
+
+        /* Header */
+        header {
+            background-color: white;
+            border-bottom: 1px solid #e8e8e8;
+            padding: 20px 40px;
+        }
+
+        nav {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-family: 'Playfair Display', serif;
+            font-size: 28px;
+            font-weight: 700;
+            color: #2D9596;
+            text-decoration: none;
+            letter-spacing: -0.5px;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 32px;
+            align-items: center;
+        }
+
+        .nav-links a {
+            color: #444;
+            text-decoration: none;
+            font-size: 15px;
+            transition: color 0.3s ease;
+        }
+
+        .nav-links a:hover {
+            color: #2D9596;
+        }
+
+        /* Back Button */
+        .back-section {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 24px 40px 0;
+        }
+
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: #666;
+            text-decoration: none;
+            font-size: 15px;
+            transition: all 0.3s ease;
+            padding: 8px 16px;
+            border-radius: 20px;
+        }
+
+        .back-btn:hover {
+            color: #2D9596;
+            background-color: #f0f0f0;
+        }
+
+        /* Article Container */
+        .article-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 40px 40px 80px;
+        }
+
+        /* Article Header */
+        .article-header {
+            text-align: center;
+            margin-bottom: 48px;
+        }
+
+        .article-category {
+            display: inline-block;
+            padding: 6px 16px;
+            background-color: #E8F5F5;
+            color: #2D9596;
+            border-radius: 16px;
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+
+        .article-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 42px;
+            font-weight: 700;
+            color: #1a1a1a;
+            line-height: 1.3;
+            margin-bottom: 24px;
+            letter-spacing: -0.5px;
+        }
+
+        .article-rating {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-size: 18px;
+            color: #FFB800;
+            margin-bottom: 32px;
+        }
+
+        .rating-stars {
+            letter-spacing: 2px;
+        }
+
+        .rating-score {
+            font-weight: 600;
+            color: #333;
+        }
+
+        /* Article Meta */
+        .article-meta {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 24px;
+            padding: 24px 0;
+            border-top: 1px solid #e8e8e8;
+            border-bottom: 1px solid #e8e8e8;
+        }
+
+        .author-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .author-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background-color: #e8e8e8;
+        }
+
+        .author-details {
+            text-align: left;
+        }
+
+        .author-name {
+            font-weight: 600;
+            color: #222;
+            font-size: 15px;
+        }
+
+        .author-stats {
+            font-size: 13px;
+            color: #999;
+        }
+
+        .follow-btn {
+            padding: 8px 20px;
+            background-color: #2D9596;
+            color: white;
+            border: none;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .follow-btn:hover {
+            background-color: #267C7D;
+            transform: translateY(-1px);
+        }
+
+        .follow-btn.following {
+            background-color: white;
+            color: #2D9596;
+            border: 1px solid #2D9596;
+        }
+
+        .follow-btn.following:hover {
+            background-color: #FFF3F3;
+            color: #FF6B6B;
+            border-color: #FF6B6B;
+        }
+
+        .article-date {
+            font-size: 14px;
+            color: #999;
+        }
+
+        /* Tags */
+        .article-tags {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin: 24px 0;
+            flex-wrap: wrap;
+        }
+
+        .tag {
+            padding: 6px 14px;
+            background-color: #f0f0f0;
+            color: #666;
+            border-radius: 14px;
+            font-size: 13px;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        .tag:hover {
+            background-color: #E8F5F5;
+            color: #2D9596;
+        }
+
+        /* Featured Image */
+        .featured-image {
+            width: 100%;
+            max-height: 600px;
+            object-fit: cover;
+            border-radius: 8px;
+            margin: 48px 0;
+        }
+
+        /* Article Content */
+        .article-content {
+            font-size: 18px;
+            line-height: 2;
+            color: #333;
+            margin: 48px 0;
+        }
+
+        .article-content p {
+            margin-bottom: 32px;
+        }
+
+        .article-content img {
+            width: 100%;
+            border-radius: 8px;
+            margin: 48px 0;
+        }
+
+        /* Action Buttons */
+        .article-actions {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            margin: 48px 0;
+            padding: 32px 0;
+            border-top: 1px solid #e8e8e8;
+            border-bottom: 1px solid #e8e8e8;
+        }
+
+        .action-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            padding: 20px 32px;
+            background-color: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .action-btn:hover {
+            border-color: #2D9596;
+            background-color: #f8f9fa;
+        }
+        
+        .action-btn:disabled {
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        .action-btn.active {
+            background-color: #E8F5F5;
+            border-color: #2D9596;
+            color: #2D9596;
+        }
+
+        .action-icon {
+            font-size: 24px;
+        }
+
+        .action-label {
+            font-size: 14px;
+            color: #666;
+        }
+
+        .action-count {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        /* Edit/Delete Buttons */
+        .author-controls {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin: 24px 0;
+        }
+
+        .btn-edit,
+        .btn-delete {
+            padding: 10px 24px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            border: none;
+        }
+
+        .btn-edit {
+            background-color: #FFB800;
+            color: white;
+        }
+
+        .btn-edit:hover {
+            background-color: #E6A600;
+            color: white;
+        }
+
+        .btn-delete {
+            background-color: #FF6B6B;
+            color: white;
+        }
+
+        .btn-delete:hover {
+            background-color: #E85555;
+        }
+
+        /* Share Section */
+        .share-section {
+            text-align: center;
+            margin: 48px 0;
+        }
+
+        .share-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 16px;
+        }
+
+        .share-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+        }
+
+        .share-btn {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            border: 1px solid #e0e0e0;
+            background-color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 18px;
+        }
+
+        .share-btn:hover {
+            border-color: #2D9596;
+            background-color: #E8F5F5;
+            transform: translateY(-2px);
+        }
+
+        /* Comments Section */
+        .comments-section {
+            margin-top: 80px;
+            padding-top: 48px;
+            border-top: 2px solid #e8e8e8;
+        }
+
+        .comments-header {
+            font-size: 24px;
+            font-weight: 700;
+            color: #222;
+            margin-bottom: 32px;
+        }
+
+        .comments-header .count {
+            font-size: 18px;
+            color: #2D9596;
+            font-weight: 600;
+        }
+
+        .comment-form {
+            margin-bottom: 40px;
+        }
+
+        .comment-textarea {
+            width: 100%;
+            padding: 16px;
+            border: 1px solid #e0e0e0;
+            border-radius: 12px;
+            font-size: 15px;
+            font-family: 'Noto Serif KR', serif;
+            resize: vertical;
+            min-height: 120px;
+            outline: none;
+            transition: border-color 0.3s ease;
+        }
+
+        .comment-textarea:focus {
+            border-color: #2D9596;
+        }
+
+        .comment-form-footer {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 12px;
+        }
+
+        .btn-submit-comment {
+            padding: 10px 24px;
+            background-color: #2D9596;
+            color: white;
+            border: none;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-submit-comment:hover {
+            background-color: #267C7D;
+        }
+
+        .comments-list {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .comment-item {
+            padding: 24px;
+            background-color: white;
+            border-radius: 12px;
+            border: 1px solid #e8e8e8;
+        }
+
+        .comment-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .comment-author {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .comment-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: #e8e8e8;
+        }
+
+        .comment-author-name {
+            font-weight: 600;
+            color: #222;
+            font-size: 15px;
+        }
+
+        .comment-date {
+            font-size: 13px;
+            color: #999;
+        }
+
+        .comment-content {
+            font-size: 15px;
+            color: #333;
+            line-height: 1.7;
+        }
+
+        .btn-delete-comment {
+            padding: 6px 12px;
+            background-color: transparent;
+            color: #999;
+            border: 1px solid #ddd;
+            border-radius: 16px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-delete-comment:hover {
+            background-color: #FF6B6B;
+            color: white;
+            border-color: #FF6B6B;
+        }
+
+        /* Footer */
+        footer {
+            background-color: #1a1a1a;
+            color: #999;
+            padding: 60px 40px 40px;
+        }
+
+        .footer-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr;
+            gap: 60px;
+            margin-bottom: 40px;
+        }
+
+        .footer-logo {
+            font-family: 'Playfair Display', serif;
+            font-size: 24px;
+            font-weight: 700;
+            color: #2D9596;
+            margin-bottom: 16px;
+        }
+
+        .footer-description {
+            font-size: 14px;
+            line-height: 1.8;
+            color: #666;
+        }
+
+        .footer-section h4 {
+            color: #fff;
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+
+        .footer-links {
+            list-style: none;
+        }
+
+        .footer-links li {
+            margin-bottom: 12px;
+        }
+
+        .footer-links a {
+            color: #999;
+            text-decoration: none;
+            font-size: 14px;
+            transition: color 0.3s ease;
+        }
+
+        .footer-links a:hover {
+            color: #2D9596;
+        }
+
+        .footer-bottom {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding-top: 30px;
+            border-top: 1px solid #333;
+            text-align: center;
+            font-size: 13px;
+            color: #666;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            nav {
+                padding: 16px 20px;
+            }
+
+            .logo {
+                font-size: 24px;
+            }
+
+            .article-container {
+                padding: 30px 20px 60px;
+            }
+
+            .article-title {
+                font-size: 32px;
+            }
+
+            .article-content {
+                font-size: 16px;
+            }
+
+            .article-meta {
+                flex-direction: column;
+                gap: 16px;
+            }
+
+            .article-actions {
+                flex-wrap: wrap;
+            }
+
+            .footer-content {
+                grid-template-columns: 1fr;
+                gap: 40px;
+            }
+        }
+
+        /* Animation */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .article-container {
+            animation: fadeIn 0.6s ease-out;
+        }
+    </style>
+</head>
+<body>
+<!-- Header -->
+<header>
+    <nav>
+        <a href="/" class="logo">Travelog</a>
+        <div class="nav-links">
+            <a href="/posts">여행 이야기</a>
+            <a href="/about">소개</a>
+            <a href="/my-page">마이페이지</a>
+        </div>
+    </nav>
+</header>
+
+<!-- Back Button -->
+<div class="back-section">
+    <a th:href="@{/posts}" class="back-btn">
+        <span>←</span>
+        <span>목록으로</span>
+    </a>
+</div>
+
+<!-- Article Container -->
+<article class="article-container">
+    <!-- Article Header -->
+    <header class="article-header">
+        <div th:if="${post.category != null and !post.category.isEmpty()}" class="article-category">
+            <span th:switch="${post.category}">
+                <span th:case="'beach'">🏖️ 해변</span>
+                <span th:case="'mountain'">🏔️ 산·자연</span>
+                <span th:case="'city'">🏙️ 도시</span>
+                <span th:case="'food'">🍽️ 맛집</span>
+                <span th:case="'culture'">🎭 문화</span>
+                <span th:case="'activity'">🎿 액티비티</span>
+                <span th:case="*" th:text="${post.category}">기타</span>
+            </span>
+        </div>
+
+        <h1 class="article-title" th:text="${post.title}">제주에서의 한 달, 느리게 살아보기</h1>
+
+        <div th:if="${post.rating != null}" class="article-rating">
+            <span class="rating-stars">
+                <span th:each="i : ${#numbers.sequence(1, 5)}"
+                      th:text="${i <= post.rating} ? '★' : '☆'">★</span>
+            </span>
+            <span class="rating-score" th:text="${post.rating} + ' / 5'">4 / 5</span>
+        </div>
+    </header>
+
+    <!-- Article Meta -->
+    <div class="article-meta">
+        <div class="author-info">
+            <div class="author-avatar"></div>
+            <div class="author-details">
+                <div class="author-name" th:text="${post.author.username}">여행러버</div>
+                <div class="author-stats">
+                    <span>팔로잉 <span id="followingCount">0</span></span>
+                    <span>·</span>
+                    <span>팔로워 <span id="followerCount">0</span></span>
+                </div>
+            </div>
+        </div>
+
+        <div th:if="${#authentication != null and #authentication.name != post.author.username}">
+            <button id="followToggleButton"
+                    th:class="${followCheck} ? 'follow-btn following' : 'follow-btn'"
+                    th:attr="data-following=${followCheck}"
+                    th:text="${followCheck} ? '팔로잉' : '팔로우'">팔로우</button>
+        </div>
+
+        <div class="article-date">
+            <div th:text="${#temporals.format(post.createdAt, 'yyyy년 MM월 dd일')}">2024년 11월 20일</div>
+            <div th:if="${post.updatedAt != post.createdAt}"
+                 style="font-size: 12px; color: #bbb;">
+                (수정: <span th:text="${#temporals.format(post.updatedAt, 'MM.dd')}"></span>)
+            </div>
+        </div>
+    </div>
+
+    <!-- [수정] 태그 표시 -->
+    <div th:if="${!post.postTags.isEmpty()}" class="article-tags">
+        <a th:each="postTag : ${post.postTags}"
+           th:href="@{/posts(keyword=${postTag.tagName})}"
+           class="tag"
+           th:text="'#' + ${postTag.tagName}">#제주</a>
+    </div>
+
+    <!-- Author Controls (Edit/Delete) -->
+    <div th:if="${#authentication != null and #authentication.name == post.author.username}"
+         class="author-controls">
+        <a th:href="@{/posts/{id}/edit(id=${post.id})}" class="btn-edit">수정</a>
+        <form th:action="@{/posts/{id}/delete(id=${post.id})}" method="post" style="display: inline;">
+            <button type="submit" class="btn-delete" onclick="return confirm('정말 삭제하시겠습니까?')">삭제</button>
+        </form>
+    </div>
+
+    <!-- Featured Image -->
+    <div th:if="${post.imageUrl != null and !post.imageUrl.isEmpty()}">
+        <img th:src="${fileStorageService.getFileUrl(post.imageUrl)}"
+             alt="Article Image"
+             class="featured-image">
+    </div>
+
+    <!-- Article Content -->
+    <div class="article-content">
+        <p th:utext="${post.content}">
+            제주에서 한 달을 지내며 느낀 점은 '느림'의 소중함이었습니다.
+            매일 아침 바다를 보며 시작하는 하루, 여유로운 산책,
+            그리고 낯선 사람들과의 따뜻한 만남들...
+        </p>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="article-actions">
+        <button class="action-btn" id="likeBtn" th:classappend="${isLiked} ? 'active'" th:disabled="${#authentication == null}">
+            <div class="action-icon">❤️</div>
+            <div class="action-label">좋아요</div>
+            <div class="action-count" id="likeCount" th:text="${likeCount}">0</div>
+        </button>
+
+        <button class="action-btn" id="bookmarkBtn" th:classappend="${isBookmarked} ? 'active'" th:disabled="${#authentication == null}">
+            <div class="action-icon">🔖</div>
+            <div class="action-label">북마크</div>
+        </button>
+
+        <button class="action-btn">
+            <div class="action-icon">💬</div>
+            <div class="action-label">댓글</div>
+            <div class="action-count" id="commentCount">0</div>
+        </button>
+    </div>
+
+    <!-- Share Section -->
+    <div class="share-section">
+        <div class="share-title">이 글을 공유해보세요</div>
+        <div class="share-buttons">
+            <button class="share-btn" onclick="shareToFacebook()">📘</button>
+            <button class="share-btn" onclick="shareToTwitter()">🐦</button>
+            <button class="share-btn" onclick="copyLink()">🔗</button>
+        </div>
+    </div>
+
+    <!-- Comments Section -->
+    <section class="comments-section">
+        <h2 class="comments-header">
+            댓글 <span class="count" id="totalComments">0</span>
+        </h2>
+
+        <div th:if="${#authentication != null and #authentication.isAuthenticated()}" class="comment-form">
+            <form id="commentForm">
+                    <textarea
+                            id="commentContent"
+                            class="comment-textarea"
+                            placeholder="댓글을 남겨보세요..."></textarea>
+                <div class="comment-form-footer">
+                    <button type="submit" class="btn-submit-comment">댓글 작성</button>
+                </div>
+            </form>
+        </div>
+
+        <div th:unless="${#authentication != null and #authentication.isAuthenticated()}"
+             style="text-align: center; padding: 40px; background-color: #f8f9fa; border-radius: 12px; margin-bottom: 32px;">
+            <p style="color: #666; margin-bottom: 16px;">댓글을 작성하려면 로그인이 필요합니다.</p>
+            <a href="/auth/login" style="color: #2D9596; text-decoration: underline;">로그인하기</a>
+        </div>
+
+        <div id="commentList" class="comments-list">
+        </div>
+    </section>
+</article>
+
+<!-- Footer -->
+<footer>
+    <!-- ... footer content ... -->
+</footer>
+
+<script th:inline="javascript">
+    const postId = /*[[${post.id}]]*/ 0;
+    const authorId = /*[[${post.author.id}]]*/ 0;
+    const currentUsername = /*[[${#authentication != null ? #authentication.name : null}]]*/ null;
+
+    async function loadComments() {
+        try {
+            const response = await fetch(`/api/comments/${postId}`);
+            if (!response.ok) return;
+            const comments = await response.json();
+            const commentList = document.getElementById("commentList");
+            commentList.innerHTML = "";
+            document.getElementById("totalComments").textContent = comments.length;
+            document.getElementById("commentCount").textContent = comments.length;
+            comments.forEach(comment => {
+                const commentItem = document.createElement("div");
+                commentItem.className = "comment-item";
+                const isAuthor = comment.username === currentUsername;
+                commentItem.innerHTML = `
+                    <div class="comment-header">
+                        <div class="comment-author">
+                            <div class="comment-avatar"></div>
+                            <div>
+                                <div class="comment-author-name">${comment.username}</div>
+                                <div class="comment-date">${comment.createdAt}</div>
+                            </div>
+                        </div>
+                        ${isAuthor ? `<button class="btn-delete-comment" onclick="deleteComment(${comment.id})">삭제</button>` : ''}
+                    </div>
+                    <div class="comment-content">${comment.content}</div>
+                `;
+                commentList.appendChild(commentItem);
+            });
+        } catch (error) {
+            console.error('Failed to load comments:', error);
+        }
+    }
+
+    const commentForm = document.getElementById("commentForm");
+    if (commentForm) {
+        commentForm.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const content = document.getElementById("commentContent").value.trim();
+            if (!content) {
+                alert('댓글 내용을 입력해주세요.');
+                return;
+            }
+            try {
+                await fetch(`/api/comments/${postId}`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ postId, content, username: currentUsername }),
+                });
+                document.getElementById("commentContent").value = "";
+                loadComments();
+            } catch (error) {
+                console.error('Failed to submit comment:', error);
+                alert('댓글 작성에 실패했습니다.');
+            }
+        });
+    }
+
+    async function deleteComment(commentId) {
+        if (!confirm('댓글을 삭제하시겠습니까?')) return;
+        try {
+            await fetch(`/api/comments/${commentId}`, { method: "DELETE" });
+            loadComments();
+        } catch (error) {
+            console.error('Failed to delete comment:', error);
+            alert('댓글 삭제에 실패했습니다.');
+        }
+    }
+
+    async function loadCounts() {
+        try {
+            const [followingRes, followerRes] = await Promise.all([
+                fetch(`/api/follow/${authorId}/followingCount`),
+                fetch(`/api/follow/${authorId}/followerCount`)
+            ]);
+            document.getElementById("followingCount").textContent = await followingRes.text();
+            document.getElementById("followerCount").textContent = await followerRes.text();
+        } catch (error) {
+            console.error('Failed to load counts:', error);
+        }
+    }
+
+    async function handleFollowToggle() {
+        const button = document.getElementById("followToggleButton");
+        if (!button) return;
+        const isFollowing = button.getAttribute("data-following") === "true";
+        try {
+            await fetch(`/api/follow/${authorId}`, { method: isFollowing ? "DELETE" : "POST" });
+            if (isFollowing) {
+                button.classList.remove("following");
+                button.textContent = "팔로우";
+                button.setAttribute("data-following", "false");
+            } else {
+                button.classList.add("following");
+                button.textContent = "팔로잉";
+                button.setAttribute("data-following", "true");
+            }
+            loadCounts();
+        } catch (error) {
+            console.error('Failed to handle follow:', error);
+            alert('팔로우 처리에 실패했습니다.');
+        }
+    }
+
+    const followToggleButton = document.getElementById("followToggleButton");
+    if (followToggleButton) {
+        followToggleButton.addEventListener("click", handleFollowToggle);
+        followToggleButton.addEventListener("mouseenter", function() {
+            if (this.getAttribute("data-following") === "true") this.textContent = "언팔로우";
+        });
+        followToggleButton.addEventListener("mouseleave", function() {
+            if (this.getAttribute("data-following") === "true") this.textContent = "팔로잉";
+        });
+    }
+
+    const likeBtn = document.getElementById("likeBtn");
+    if (likeBtn) {
+        likeBtn.addEventListener("click", async function() {
+            if (!currentUsername) {
+                alert('로그인이 필요합니다.');
+                window.location.href = '/auth/login';
+                return;
+            }
+            try {
+                const response = await fetch(`/api/posts/${postId}/like`, { method: "POST" });
+                if (!response.ok) throw new Error('Server error');
+                const data = await response.json();
+                this.classList.toggle("active");
+                document.getElementById("likeCount").textContent = data.likeCount;
+            } catch (error) {
+                console.error('Failed to toggle like:', error);
+                alert('좋아요 처리에 실패했습니다.');
+            }
+        });
+    }
+
+    const bookmarkBtn = document.getElementById("bookmarkBtn");
+    if (bookmarkBtn) {
+        bookmarkBtn.addEventListener("click", async function() {
+            if (!currentUsername) {
+                alert('로그인이 필요합니다.');
+                window.location.href = '/auth/login';
+                return;
+            }
+            try {
+                const response = await fetch(`/api/posts/${postId}/bookmark`, { method: "POST" });
+                if (!response.ok) throw new Error('Server error');
+                this.classList.toggle("active");
+            } catch (error) {
+                console.error('Failed to toggle bookmark:', error);
+                alert('북마크 처리에 실패했습니다.');
+            }
+        });
+    }
+
+    function shareToFacebook() { window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}`, '_blank'); }
+    function shareToTwitter() { window.open(`https://twitter.com/intent/tweet?url=${encodeURIComponent(window.location.href)}`, '_blank'); }
+    function copyLink() { navigator.clipboard.writeText(window.location.href).then(() => alert('링크가 복사되었습니다!')); }
+
+    document.addEventListener("DOMContentLoaded", () => {
+        loadComments();
+        if (document.getElementById("followingCount")) {
+            loadCounts();
+        }
+    });
+</script>
+</body>
+</html>

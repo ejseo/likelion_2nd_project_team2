@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>소개 - Travelog</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Serif KR', serif;
+            color: #222;
+            line-height: 1.8;
+            background-color: #fafafa;
+        }
+
+        /* Header */
+        header {
+            position: sticky;
+            top: 0;
+            background-color: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            z-index: 1000;
+            transition: all 0.3s ease;
+        }
+
+        nav {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 40px;
+        }
+
+        .logo {
+            font-family: 'Playfair Display', serif;
+            font-size: 28px;
+            font-weight: 700;
+            color: #2D9596;
+            text-decoration: none;
+            letter-spacing: -0.5px;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 32px;
+            align-items: center;
+        }
+
+        .nav-links a {
+            color: #444;
+            text-decoration: none;
+            font-size: 15px;
+            font-weight: 400;
+            transition: color 0.3s ease;
+        }
+
+        .nav-links a:hover {
+            color: #2D9596;
+        }
+
+        .btn-write {
+            padding: 8px 24px;
+            background-color: #2D9596;
+            color: white;
+            border-radius: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-write:hover {
+            background-color: #267C7D;
+            transform: translateY(-1px);
+            color: white;
+        }
+
+        /* Hero Section */
+        .hero {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            padding: 120px 40px 80px;
+            text-align: center;
+        }
+
+        .hero-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 56px;
+            font-weight: 700;
+            color: #1a1a1a;
+            margin-bottom: 24px;
+            animation: fadeInUp 0.8s ease-out;
+        }
+
+        .hero-subtitle {
+            font-size: 20px;
+            color: #555;
+            max-width: 600px;
+            margin: 0 auto;
+            animation: fadeInUp 0.8s ease-out 0.2s backwards;
+        }
+
+        /* Main Content */
+        main {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 80px 40px;
+        }
+
+        .section {
+            margin-bottom: 80px;
+            animation: fadeInUp 0.8s ease-out backwards;
+        }
+
+        .section:nth-child(1) { animation-delay: 0.3s; }
+        .section:nth-child(2) { animation-delay: 0.4s; }
+        .section:nth-child(3) { animation-delay: 0.5s; }
+
+        .section-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 36px;
+            font-weight: 700;
+            color: #1a1a1a;
+            margin-bottom: 24px;
+            text-align: center;
+        }
+
+        .section-subtitle {
+            font-size: 18px;
+            color: #666;
+            text-align: center;
+            margin-bottom: 48px;
+            line-height: 1.8;
+        }
+
+        /* Features Grid */
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 40px;
+            margin-top: 48px;
+        }
+
+        .feature-card {
+            background-color: white;
+            padding: 40px 32px;
+            border-radius: 12px;
+            border: 1px solid #e8e8e8;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.1);
+            border-color: #2D9596;
+        }
+
+        .feature-icon {
+            font-size: 48px;
+            margin-bottom: 24px;
+        }
+
+        .feature-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #222;
+            margin-bottom: 12px;
+        }
+
+        .feature-description {
+            font-size: 15px;
+            color: #666;
+            line-height: 1.6;
+        }
+
+        /* Stats Section */
+        .stats {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            padding: 60px 40px;
+            border-radius: 12px;
+            margin: 80px 0;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 40px;
+            text-align: center;
+        }
+
+        .stat-item {
+            padding: 20px;
+        }
+
+        .stat-number {
+            font-family: 'Playfair Display', serif;
+            font-size: 48px;
+            font-weight: 700;
+            color: #2D9596;
+            margin-bottom: 8px;
+        }
+
+        .stat-label {
+            font-size: 16px;
+            color: #666;
+            font-weight: 500;
+        }
+
+        /* CTA Section */
+        .cta-section {
+            background: linear-gradient(135deg, #2D9596 0%, #267C7D 100%);
+            padding: 80px 40px;
+            border-radius: 12px;
+            text-align: center;
+            color: white;
+        }
+
+        .cta-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 42px;
+            font-weight: 700;
+            margin-bottom: 20px;
+        }
+
+        .cta-text {
+            font-size: 18px;
+            opacity: 0.95;
+            margin-bottom: 32px;
+        }
+
+        .cta-button {
+            display: inline-block;
+            padding: 16px 48px;
+            background-color: white;
+            color: #2D9596;
+            text-decoration: none;
+            border-radius: 30px;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .cta-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Footer */
+        footer {
+            background-color: #1a1a1a;
+            color: #999;
+            padding: 60px 40px 40px;
+        }
+
+        .footer-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr;
+            gap: 60px;
+            margin-bottom: 40px;
+        }
+
+        .footer-logo {
+            font-family: 'Playfair Display', serif;
+            font-size: 24px;
+            font-weight: 700;
+            color: #2D9596;
+            margin-bottom: 16px;
+        }
+
+        .footer-description {
+            font-size: 14px;
+            line-height: 1.8;
+            color: #666;
+        }
+
+        .footer-section h4 {
+            color: #fff;
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+
+        .footer-links {
+            list-style: none;
+        }
+
+        .footer-links li {
+            margin-bottom: 12px;
+        }
+
+        .footer-links a {
+            color: #999;
+            text-decoration: none;
+            font-size: 14px;
+            transition: color 0.3s ease;
+        }
+
+        .footer-links a:hover {
+            color: #2D9596;
+        }
+
+        .footer-bottom {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding-top: 30px;
+            border-top: 1px solid #333;
+            text-align: center;
+            font-size: 13px;
+            color: #666;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            nav {
+                padding: 16px 20px;
+            }
+
+            .logo {
+                font-size: 24px;
+            }
+
+            .nav-links {
+                gap: 16px;
+            }
+
+            .nav-links a {
+                font-size: 14px;
+            }
+
+            .hero {
+                padding: 80px 20px 60px;
+            }
+
+            .hero-title {
+                font-size: 36px;
+            }
+
+            .hero-subtitle {
+                font-size: 16px;
+            }
+
+            main {
+                padding: 60px 20px;
+            }
+
+            .section-title {
+                font-size: 28px;
+            }
+
+            .features-grid {
+                grid-template-columns: 1fr;
+                gap: 24px;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+                gap: 24px;
+            }
+
+            .cta-title {
+                font-size: 32px;
+            }
+
+            .footer-content {
+                grid-template-columns: 1fr;
+                gap: 40px;
+            }
+        }
+
+        /* Animation */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+<body>
+<!-- Header -->
+<header>
+    <nav>
+        <a href="/" class="logo">Travelog</a>
+        <div class="nav-links">
+            <a href="/posts">여행 이야기</a>
+            <a href="/about">소개</a>
+            <a href="/my-page">마이페이지</a>
+            <a th:href="@{/posts/new}" class="btn-write">글쓰기</a>
+        </div>
+    </nav>
+</header>
+
+<!-- Hero Section -->
+<section class="hero">
+    <h1 class="hero-title">Travelog</h1>
+    <p class="hero-subtitle">특별했던 여행의 순간들을 기록하고 공유하는 공간</p>
+</section>
+
+<!-- Main Content -->
+<main>
+    <!-- About Section -->
+    <section class="section">
+        <h2 class="section-title">Travelog는 무엇인가요?</h2>
+        <p class="section-subtitle">
+            Travelog는 여행을 사랑하는 사람들이 모여 자신의 여행 경험을 나누고,<br>
+            다른 이들의 이야기에서 영감을 얻는 커뮤니티 플랫폼입니다.<br>
+            사진과 글로 여행의 순간을 기록하고, 카테고리별로 체계적으로 정리할 수 있습니다.
+        </p>
+    </section>
+
+    <!-- Features Section -->
+    <section class="section">
+        <h2 class="section-title">주요 기능</h2>
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">✍️</div>
+                <h3 class="feature-title">여행 기록</h3>
+                <p class="feature-description">
+                    사진과 함께 여행의 순간을 생생하게 기록하세요. 제목, 내용, 평점, 태그로 체계적으로 관리할 수 있습니다.
+                </p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🗂️</div>
+                <h3 class="feature-title">카테고리 분류</h3>
+                <p class="feature-description">
+                    해변, 산, 도시, 맛집, 문화, 액티비티 등 다양한 카테고리로 여행 경험을 분류하고 찾아보세요.
+                </p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🔍</div>
+                <h3 class="feature-title">검색 기능</h3>
+                <p class="feature-description">
+                    키워드 검색과 카테고리 필터로 원하는 여행 이야기를 쉽게 찾을 수 있습니다.
+                </p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">⭐</div>
+                <h3 class="feature-title">평점 시스템</h3>
+                <p class="feature-description">
+                    각 여행지에 대한 평점을 남겨 다른 사용자들에게 유용한 정보를 제공하세요.
+                </p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🏷️</div>
+                <h3 class="feature-title">태그 기능</h3>
+                <p class="feature-description">
+                    태그를 활용해 여행지, 특징, 감상 등을 자유롭게 표현하고 분류할 수 있습니다.
+                </p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">👥</div>
+                <h3 class="feature-title">소셜 기능</h3>
+                <p class="feature-description">
+                    다른 사용자를 팔로우하고 그들의 여행 이야기를 모아서 볼 수 있습니다.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Stats Section -->
+    <div class="stats">
+        <div class="stats-grid">
+            <div class="stat-item">
+                <div class="stat-number">∞</div>
+                <div class="stat-label">여행 이야기</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">6</div>
+                <div class="stat-label">카테고리</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">24/7</div>
+                <div class="stat-label">언제든지 기록</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- How to Use Section -->
+    <section class="section">
+        <h2 class="section-title">사용 방법</h2>
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">1️⃣</div>
+                <h3 class="feature-title">회원가입</h3>
+                <p class="feature-description">
+                    간단한 회원가입으로 Travelog의 멤버가 되세요.
+                </p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">2️⃣</div>
+                <h3 class="feature-title">여행 기록 작성</h3>
+                <p class="feature-description">
+                    글쓰기 버튼을 눌러 여행의 순간을 기록하세요.
+                </p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">3️⃣</div>
+                <h3 class="feature-title">공유하고 소통하기</h3>
+                <p class="feature-description">
+                    다른 사용자의 여행 이야기를 읽고 영감을 받으세요.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <div class="cta-section">
+        <h2 class="cta-title">지금 바로 시작하세요</h2>
+        <p class="cta-text">당신의 특별한 여행 이야기를 공유해보세요</p>
+        <a th:href="@{/posts/new}" class="cta-button">첫 여행 기록 남기기</a>
+    </div>
+</main>
+
+<!-- Footer -->
+<footer>
+    <div class="footer-content">
+        <div>
+            <div class="footer-logo">Travelog</div>
+            <p class="footer-description">
+                특별했던 여행의 순간들을 기록하고 공유하는 공간입니다.<br>
+                당신의 여행 이야기가 누군가에게는 소중한 영감이 될 수 있습니다.
+            </p>
+        </div>
+        <div class="footer-section">
+            <h4>서비스</h4>
+            <ul class="footer-links">
+                <li><a href="/posts">여행 이야기</a></li>
+                <li><a th:href="@{/posts/new}">글쓰기</a></li>
+                <li><a href="/about">소개</a></li>
+                <li><a href="/faq">자주 묻는 질문</a></li>
+            </ul>
+        </div>
+        <div class="footer-section">
+            <h4>정보</h4>
+            <ul class="footer-links">
+                <li><a href="/terms">이용약관</a></li>
+                <li><a href="/privacy">개인정보처리방침</a></li>
+                <li><a href="/contact">문의하기</a></li>
+            </ul>
+        </div>
+    </div>
+    <div class="footer-bottom">
+        © 2025 Travelog. All rights reserved.
+    </div>
+</footer>
+
+<script>
+    // Header scroll effect
+    let lastScroll = 0;
+    const header = document.querySelector('header');
+
+    window.addEventListener('scroll', () => {
+        const currentScroll = window.pageYOffset;
+
+        if (currentScroll <= 0) {
+            header.style.boxShadow = 'none';
+        } else {
+            header.style.boxShadow = '0 2px 10px rgba(0,0,0,0.05)';
+        }
+
+        lastScroll = currentScroll;
+    });
+</script>
+</body>
+</html>

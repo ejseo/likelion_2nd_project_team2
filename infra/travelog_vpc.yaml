@@ -1,0 +1,336 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: VPC, Subnet, IGW, NAT Gateway, Private Route Tables
+
+Parameters:
+  # CIDR 블록 정의
+  PublicSubnetACidr:
+    Type: String
+    Default: 10.0.1.0/24
+  PublicSubnetCCidr:
+    Type: String
+    Default: 10.0.2.0/24
+  PrivateAppSubnetACidr:
+    Type: String
+    Default: 10.0.11.0/24
+  PrivateAppSubnetCCidr:
+    Type: String
+    Default: 10.0.12.0/24
+  PrivateDbSubnetACidr:
+    Type: String
+    Default: 10.0.21.0/24
+  PrivateDbSubnetCCidr:
+    Type: String
+    Default: 10.0.22.0/24
+
+  # 가용 영역 정의 (Seoul Region 기준)
+  AzA:
+    Type: AWS::EC2::AvailabilityZone::Name
+    Default: ap-northeast-2a
+  AzC:
+    Type: AWS::EC2::AvailabilityZone::Name
+    Default: ap-northeast-2c
+
+
+Resources:
+
+  # =========================================================================
+  # 1. VPC, IGW, 및 연결
+  # =========================================================================
+  TravelogVPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+        - Key: Name
+          Value: travelog-vpc
+
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: travelog-igw
+
+  AttachGateway:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref TravelogVPC
+      InternetGatewayId: !Ref InternetGateway
+
+
+  # =========================================================================
+  # 2. Subnets (Public, Private App, Private DB)
+  # =========================================================================
+
+  # Public Subnets (NAT Gateway 위치)
+  PublicSubnetA:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref TravelogVPC
+      CidrBlock: !Ref PublicSubnetACidr
+      AvailabilityZone: !Ref AzA
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: travelog-public-a
+        - Key: Tier
+          Value: public
+
+  PublicSubnetC:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref TravelogVPC
+      CidrBlock: !Ref PublicSubnetCCidr
+      AvailabilityZone: !Ref AzC
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: travelog-public-c
+        - Key: Tier
+          Value: public
+
+  # Private App Subnets (ECS/EC2 위치)
+  PrivateAppSubnetA:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref TravelogVPC
+      CidrBlock: !Ref PrivateAppSubnetACidr
+      AvailabilityZone: !Ref AzA
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: travelog-private-app-a
+        - Key: Tier
+          Value: private-app
+
+  PrivateAppSubnetC:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref TravelogVPC
+      CidrBlock: !Ref PrivateAppSubnetCCidr
+      AvailabilityZone: !Ref AzC
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: travelog-private-app-c
+        - Key: Tier
+          Value: private-app
+
+  # Private DB Subnets (RDS 위치)
+  PrivateDbSubnetA:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref TravelogVPC
+      CidrBlock: !Ref PrivateDbSubnetACidr
+      AvailabilityZone: !Ref AzA
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: travelog-private-db-a
+        - Key: Tier
+          Value: private-db
+
+  PrivateDbSubnetC:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref TravelogVPC
+      CidrBlock: !Ref PrivateDbSubnetCCidr
+      AvailabilityZone: !Ref AzC
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: travelog-private-db-c
+        - Key: Tier
+          Value: private-db
+
+
+  # =========================================================================
+  # 3. NAT Gateways (HA 구성)
+  # =========================================================================
+
+  # AZ A용 NATGW
+  NatEipA:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
+      Tags:
+        - Key: Name
+          Value: travelog-nat-a-eip
+
+  NatGatewayA:
+    Type: AWS::EC2::NatGateway
+    DependsOn: AttachGateway # IGW 연결 후 생성
+    Properties:
+      AllocationId: !GetAtt NatEipA.AllocationId
+      SubnetId: !Ref PublicSubnetA # Public-A에 배포
+      Tags:
+        - Key: Name
+          Value: travelog-nat-a
+
+  # AZ C용 NATGW
+  NatEipC:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
+      Tags:
+        - Key: Name
+          Value: travelog-nat-c-eip
+
+  NatGatewayC:
+    Type: AWS::EC2::NatGateway
+    DependsOn: AttachGateway # IGW 연결 후 생성
+    Properties:
+      AllocationId: !GetAtt NatEipC.AllocationId
+      SubnetId: !Ref PublicSubnetC # Public-C에 배포
+      Tags:
+        - Key: Name
+          Value: travelog-nat-c
+
+  # =========================================================================
+  # 4. Route Tables 및 연결
+  # =========================================================================
+
+  # 4-1. Public Route Table (IGW 연결)
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref TravelogVPC
+      Tags:
+        - Key: Name
+          Value: travelog-rt-public
+
+  PublicDefaultRoute:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+
+  PublicSubnetAAssoc:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnetA
+      RouteTableId: !Ref PublicRouteTable
+
+  PublicSubnetCAssoc:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnetC
+      RouteTableId: !Ref PublicRouteTable
+
+
+  # 4-2. Private App Route Table A (NAT Gateway A 연결)
+  PrivateAppRouteTableA:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref TravelogVPC
+      Tags:
+        - Key: Name
+          Value: travelog-rt-private-app-a
+
+  PrivateAppDefaultRouteA:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PrivateAppRouteTableA
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref NatGatewayA # AZ A NATGW 참조
+
+  PrivateAppSubnetAAssoc:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PrivateAppSubnetA
+      RouteTableId: !Ref PrivateAppRouteTableA
+
+  # 4-3. Private App Route Table C (NAT Gateway C 연결)
+  PrivateAppRouteTableC:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref TravelogVPC
+      Tags:
+        - Key: Name
+          Value: travelog-rt-private-app-c
+
+  PrivateAppDefaultRouteC:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PrivateAppRouteTableC
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref NatGatewayC # AZ C NATGW 참조
+
+  PrivateAppSubnetCAssoc:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PrivateAppSubnetC
+      RouteTableId: !Ref PrivateAppRouteTableC
+
+
+  # 4-4. Private DB Route Table (외부 통신 없음)
+  PrivateDbRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref TravelogVPC
+      Tags:
+        - Key: Name
+          Value: travelog-rt-private-db
+
+  PrivateDbSubnetAAssoc:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PrivateDbSubnetA
+      RouteTableId: !Ref PrivateDbRouteTable
+
+  PrivateDbSubnetCAssoc:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PrivateDbSubnetC
+      RouteTableId: !Ref PrivateDbRouteTable
+
+
+Outputs:
+  # VPC ID
+  VpcId:
+    Value: !Ref TravelogVPC
+    Export:
+      Name: travelog-VpcId
+
+  # Public Subnet IDs
+  PublicSubnetAId:
+    Value: !Ref PublicSubnetA
+    Export:
+      Name: travelog-PublicSubnetAId
+  PublicSubnetCId:
+    Value: !Ref PublicSubnetC
+    Export:
+      Name: travelog-PublicSubnetCId
+
+  # Private App Subnet IDs (ECS 배포 시 필요)
+  PrivateAppSubnetAId:
+    Value: !Ref PrivateAppSubnetA
+    Export:
+      Name: travelog-PrivateAppSubnetAId
+  PrivateAppSubnetCId:
+    Value: !Ref PrivateAppSubnetC
+    Export:
+      Name: travelog-PrivateAppSubnetCId
+
+  # Private DB Subnet IDs (RDS 배포 시 필요)
+  PrivateDbSubnetAId:
+    Value: !Ref PrivateDbSubnetA
+    Export:
+      Name: travelog-PrivateDbSubnetAId
+  PrivateDbSubnetCId:
+    Value: !Ref PrivateDbSubnetC
+    Export:
+      Name: travelog-PrivateDbSubnetCId
+
+  # NAT Gateway IDs
+  NatGatewayAId:
+    Value: !Ref NatGatewayA
+    Export:
+      Name: travelog-NatGatewayAId
+  NatGatewayCId:
+    Value: !Ref NatGatewayC
+    Export:
+      Name: travelog-NatGatewayCId

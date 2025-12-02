@@ -1,0 +1,192 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: ECS Fargate Cluster, Task Definition, Service, and ALB Setup for travelog-container2
+
+# === 1. 파라미터 정의 (기존 리소스 ID 입력) - 드롭다운 활성화 ===
+Parameters:
+  ProjectName:
+    Type: String
+    Default: travelog-app
+    Description: project name
+
+  VpcId:
+    Type: AWS::EC2::VPC::Id # VPC ID를 드롭다운으로 선택
+    Description: travelog-vpc
+
+  PrivateSubnetIds:
+    Type: 'List<AWS::EC2::Subnet::Id>' # 프라이빗 서브넷 다중 선택 드롭다운
+    Description: travelog-private-app-a & c
+
+  PublicSubnetIds:
+    Type: 'List<AWS::EC2::Subnet::Id>' # 퍼블릭 서브넷 다중 선택 드롭다운
+    Description: travelog-public a & c
+
+  ExistingTaskSecurityGroupId:
+    Type: AWS::EC2::SecurityGroup::Id # Task SG ID를 드롭다운으로 선택
+    # 실제 환경에서 사용하는 올바른 Task Security Group ID로 교체하세요.
+    Description: SG-ECS
+
+  ExistingALBSecurityGroupId:
+    Type: AWS::EC2::SecurityGroup::Id # ALB SG ID를 드롭다운으로 선택
+    Description: SG-ALB
+
+  ImageTag:
+    Type: String
+    Default: dev3
+    Description: ECR Repository Docker image tag (ex. dev3)
+
+  ContainerImageUri:
+    Type: String
+    Description: ECR URI
+
+  ContainerPort:
+    Type: Number
+    Default: 8080
+    Description: application port (8080)
+
+# === 2. IAM 역할 정의 (Task Execution & Task Role) ===
+Resources:
+  EcsTaskExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal: { Service: [ecs-tasks.amazonaws.com] }
+            Action: ['sts:AssumeRole']
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
+      Policies:
+        - PolicyName: S3EnvFileAccess
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                Resource: !Sub 'arn:aws:s3:::travelog-env-config/environment.env'
+
+  EcsTaskRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal: { Service: [ecs-tasks.amazonaws.com] }
+            Action: ['sts:AssumeRole']
+
+  # === 3. ECS 클러스터 정의 ===
+  EcsCluster:
+    Type: AWS::ECS::Cluster
+    Properties:
+      ClusterName: !Sub 'travelog-cluster-${ProjectName}'
+      CapacityProviders:
+        - FARGATE
+
+  TaskIngressFromALB:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref ExistingTaskSecurityGroupId # Task SG
+      IpProtocol: tcp
+      FromPort: !Ref ContainerPort
+      ToPort: !Ref ContainerPort
+      SourceSecurityGroupId: !Ref ExistingALBSecurityGroupId # ALB SG
+
+  # === 5. 로드 밸런서 및 대상 그룹 정의 ===
+  ApplicationLoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Subnets: !Ref PublicSubnetIds
+      Scheme: internet-facing
+      SecurityGroups:
+        - !Ref ExistingALBSecurityGroupId
+
+  TargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      VpcId: !Ref VpcId
+      Port: !Ref ContainerPort
+      Protocol: HTTP
+      TargetType: ip
+      HealthCheckPath: /
+      Matcher: { HttpCode: '200' }
+
+  HttpListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref ApplicationLoadBalancer
+      Port: 80
+      Protocol: HTTP
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref TargetGroup
+
+  # === 6. ECS Task Definition 정의 ===
+  EcsTaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Family: !Sub '${ProjectName}-task'
+      RequiresCompatibilities:
+        - FARGATE
+      NetworkMode: awsvpc
+      Cpu: '512'
+      Memory: '1024'
+      ExecutionRoleArn: !GetAtt EcsTaskExecutionRole.Arn
+      TaskRoleArn: !GetAtt EcsTaskRole.Arn
+      ContainerDefinitions:
+        - Name: !Sub '${ProjectName}-container'
+          Image: !Sub '${ContainerImageUri}:${ImageTag}'
+          PortMappings:
+            - ContainerPort: !Ref ContainerPort
+              Protocol: tcp
+          MemoryReservation: 1024
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref EcsLogGroup
+              awslogs-region: !Ref "AWS::Region"
+              awslogs-stream-prefix: ecs
+          EnvironmentFiles:
+            - Type: s3
+              Value: !Sub 'arn:aws:s3:::travelog-env-config/environment.env'
+
+  # === 7. CloudWatch Log Group 정의 ===
+  EcsLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/ecs/${ProjectName}'
+      RetentionInDays: 7
+
+  # === 8. ECS Service 정의 (배포) ===
+  EcsService:
+    Type: AWS::ECS::Service
+    # HttpListener 종속성 유지
+    DependsOn:
+      - HttpListener
+    Properties:
+      Cluster: !Ref EcsCluster
+      ServiceName: !Sub '${ProjectName}-service'
+      LaunchType: FARGATE
+      DeploymentConfiguration:
+        MaximumPercent: 200
+        MinimumHealthyPercent: 100
+      DesiredCount: 1
+      TaskDefinition: !Ref EcsTaskDefinition
+      DeploymentController: { Type: ECS }
+      LoadBalancers:
+        - ContainerName: !Sub '${ProjectName}-container'
+          ContainerPort: !Ref ContainerPort
+          TargetGroupArn: !Ref TargetGroup
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: DISABLED
+          Subnets: !Ref PrivateSubnetIds
+          SecurityGroups:
+            - !Ref ExistingTaskSecurityGroupId
+
+# === 9. 출력 (Outputs) ===
+Outputs:
+  ClusterName:
+    Description: ECS Cluster Name
+    Value: !Ref EcsCluster
+  ServiceEndpoint:
+    Description: Application Load Balancer DNS Name
+    Value: !GetAtt ApplicationLoadBalancer.DNSName
