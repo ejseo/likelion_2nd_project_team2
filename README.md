@@ -193,6 +193,7 @@ com.example.boardpjt
 
 #### 인증/인가
 - **일반 로그인**: JWT Access Token (1시간) + Refresh Token (7일)
+- **소셜 로그인**: 카카오에서 받은 사용자 정보를 처리
 - **Refresh Token**: Redis에 저장 (서버 측 검증)
 - **로그아웃**: Cookie 삭제 + Redis Token 무효화 (에러 핸들링 포함)
 

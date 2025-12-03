@@ -291,7 +291,7 @@
             border-color: #2D9596;
             background-color: #f8f9fa;
         }
-        
+
         .action-btn:disabled {
             cursor: not-allowed;
             opacity: 0.6;
@@ -750,11 +750,9 @@
 
     <!-- Article Content -->
     <div class="article-content">
-        <p th:utext="${post.content}">
-            제주에서 한 달을 지내며 느낀 점은 '느림'의 소중함이었습니다.
-            매일 아침 바다를 보며 시작하는 하루, 여유로운 산책,
-            그리고 낯선 사람들과의 따뜻한 만남들...
-        </p>
+        <!-- [개선 제안] CSS의 'white-space: pre-wrap' 속성을 사용하여 줄바꿈과 공백을 HTML에 그대로 표시합니다. -->
+        <!-- 이 방식은 서버사이드에서 문자열을 변환할 필요가 없어 더 안정적이고 간단합니다. -->
+        <div style="white-space: pre-wrap;" th:text="${post.content}"></div>
     </div>
 
     <!-- Action Buttons -->
